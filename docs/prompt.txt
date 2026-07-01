@@ -1,0 +1,9 @@
+Create PVAccess server in this directory, using epicsdev module.
+The server should watch specified directory for newly appeared files.
+The file format will be the same as in the data/RunXXX_list.txt.
+
+The following PVs should be created:
+runStartTime: updated from the Run start time field of the header
+brdNchK: 
+
+
