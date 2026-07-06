@@ -10,7 +10,7 @@ This server:
 """
 # pylint: disable=invalid-name
 from __future__ import annotations
-__version__ = 'v0.0.2 2026-07-02'#
+__version__ = 'v0.0.3 2026-07-06'# Parsing and posting of channels is working.
 
 import argparse
 import importlib
@@ -69,21 +69,19 @@ MAX_MAX_CHANNELS_PER_BOARD = 64
 
 
 @dataclass(slots=True)
-class RunRow:
+class TriggedChannels:
     board: int
-    channel: int
-    lg: float
-    hg: float
+    channels: list[int]
+    lg: list[float]
+    hg: list[float]
     timestamp_us: Optional[float] = None
     trigger_id: Optional[int] = None
-    nchs: Optional[int] = None
-
 
 @dataclass(slots=True)
 class ParsedRunFile:
     path: Path
     header: dict[str, str]
-    rows: list[RunRow]
+    triggedChannels: list[TriggedChannels]
 
     @property
     def run_start_time(self) -> str:
@@ -95,8 +93,8 @@ class Dt5202PVServer:
         self.provider = StaticProvider("dt5202")
 
         self.run_start_time_pv = SharedPV(
-            nt=NTScalar("s"),
-            initial={"value": ""},
+            nt=NTScalar("d"),
+            initial={"value": 0.0},
         )
         self.b0_channels_pv = SharedPV(
             nt=NTScalar("ad"),
@@ -109,10 +107,20 @@ class Dt5202PVServer:
         self._server = Server(providers=[self.provider])
 
     def update_run_start_time(self, value: str) -> None:
-        self.run_start_time_pv.post({"value": value})
+        # Parse string to datetime object
+        dt_obj = datetime.strptime(value, '%a %b %d %H:%M:%S %Y %Z')
+        # Convert to timestamp
+        self.runTimestamp = dt_obj.timestamp()
+        #print(f"Updating runStartTime PV with value: {value, self.runTimestamp}")
+        self.run_start_time_pv.post(value=self.runTimestamp, timestamp=self.runTimestamp)
 
-    def update_b0_channels(self, values: list[float]) -> None:
-        self.b0_channels_pv.post({"value": values})
+    def update_b0_channels(self, parsed: ParsedRunFile) -> None:
+        if verb_is(2): printv(2, f"Updating b0Channels PV with values")
+        for record in parsed.triggedChannels:
+            if record.board == 0:
+                #print(f"Updating b0Channels PV with record: {record}")
+                self.b0_channels_pv.post({"value": record.lg}, timestamp=self.runTimestamp + record.timestamp_us / 1e6)
+                time.sleep(0.01)  # Small delay to ensure PV update is processed
 
     def close(self) -> None:
         self._server.stop()
@@ -120,11 +128,11 @@ class Dt5202PVServer:
 
 def parse_run_file(path: Path) -> ParsedRunFile:
     """Parse a CAEN DT5202 run-list file.
-    Returns a ParsedRunFile object containing the header and rows.
+    Returns a ParsedRunFile object containing the header and TriggedChannels records.
     """
-    if verb_is(1): printv(1, f"Parsing run file: {path}")
+    if verb_is(2): printv(2, f"Parsing run file: {path}")
     header: dict[str, str] = {}
-    rows: list[RunRow] = []
+    records: list[TriggedChannels] = []
 
     with path.open("r", encoding="utf-8") as f:
         for raw_line in f:
@@ -154,31 +162,37 @@ def parse_run_file(path: Path) -> ParsedRunFile:
             timestamp_us = float(cols[4]) if len(cols) > 4 else None
             trigger_id = int(cols[5]) if len(cols) > 5 else None
             nchs = int(cols[6]) if len(cols) > 6 else None
-            if verb_is(2): printv(2, f"Parsed row: board={board}, channel={channel}, lg={lg}, hg={hg}, timestamp_us={timestamp_us}, trigger_id={trigger_id}, nchs={nchs}") 
+            if verb_is(3): printv(3, f"Parsed row: board={board}, channel={channel}, lg={lg}, hg={hg}, timestamp_us={timestamp_us}, trigger_id={trigger_id}, nchs={nchs}") 
 
-            rows.append(
-                RunRow(
+            # If timestamp_us is present, start a new TriggedChannels entry; otherwise, append to the last one.
+            if timestamp_us is not None:
+                records.append(TriggedChannels(
                     board=board,
-                    channel=channel,
-                    lg=lg,
-                    hg=hg,
-                    timestamp_us=timestamp_us,
-                    trigger_id=trigger_id,
-                    nchs=nchs,
-                )
-            )
+                    channels=[],
+                    lg=[],
+                    hg=[],
+                    timestamp_us=float(timestamp_us),
+                    trigger_id=int(trigger_id)
+                ))
 
-    return ParsedRunFile(path=path, header=header, rows=rows)
+            # Append the channel data to the last TriggedChannels entry.
+            records[-1].channels.append(channel)
+            records[-1].lg.append(lg)
+            records[-1].hg.append(hg)
+
+    #print(f"Parsed run file: {records}")
+    return ParsedRunFile(path=path, header=header, triggedChannels=records)
 
 
 def default_user_processor(parsed: ParsedRunFile) -> None:
     """Default hook for user-defined processing."""
-    LOG.info("Processed %s rows from %s", len(parsed.rows), parsed.path.name)
+    #LOG.info("Processed %s rows from %s", len(parsed.triggedChannels), parsed.path.name)
+    if verb_is(1): printv(1, f"Processed {len(parsed.triggedChannels)} rows from {parsed.path.name}")
 
 
 def load_user_processor(spec: str) -> Callable[[ParsedRunFile], None]:
     """Load callback from MODULE:FUNCTION spec."""
-    if verb_is(1): printv(1, f"Loading user processor: {spec}")
+    if verb_is(2): printv(2, f"Loading user processor: {spec}")
     if ":" not in spec:
         raise ValueError("processor must be in MODULE:FUNCTION format")
 
@@ -189,18 +203,6 @@ def load_user_processor(spec: str) -> Callable[[ParsedRunFile], None]:
         raise TypeError(f"{spec} is not callable")
     return fn
 
-
-def compute_board0_channels(parsed: ParsedRunFile, max_channels_per_board: int) -> list[float]:
-    if verb_is(1): printv(1, f"Computing board 0 channels from {len(parsed.rows)} rows")
-    values = [0.0] * max_channels_per_board
-    for row in parsed.rows:
-        if row.board != 0:
-            continue
-        if 0 <= row.channel < max_channels_per_board:
-            values[row.channel] = float(row.lg)
-    return values
-
-
 def process_one_file(
     file_path: Path,
     out_dir: Path,
@@ -208,13 +210,13 @@ def process_one_file(
     max_channels_per_board: int,
     user_processor: Callable[[ParsedRunFile], None],
 ) -> None:
-    if verb_is(1): printv(1, f"Processing file: {file_path}")
+    if verb_is(2): printv(2, f"Processing file: {file_path}")
     parsed = parse_run_file(file_path)
 
     user_processor(parsed)
 
     pva.update_run_start_time(parsed.run_start_time)
-    pva.update_b0_channels(compute_board0_channels(parsed, max_channels_per_board))
+    pva.update_b0_channels(parsed)
 
     destination = out_dir / file_path.name
     if destination.exists():
@@ -222,11 +224,10 @@ def process_one_file(
         destination = out_dir / f"{file_path.stem}_{timestamp}{file_path.suffix}"
 
     shutil.move(str(file_path), str(destination))
-    LOG.info("Moved processed file to %s", destination)
-
+    #LOG.info("Moved processed file to %s", destination)
 
 def wait_until_file_is_stable(file_path: Path, checks: int = 10, delay_seconds: float = 0.2) -> bool:
-    if verb_is(1): printv(1, f"Waiting for file to stabilize: {file_path}")
+    if verb_is(2): printv(2, f"Waiting for file to stabilize: {file_path}")
     last_size: Optional[int] = None
     for _ in range(checks):
         try:
@@ -392,7 +393,7 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     pargs = parse_args(argv)
 
-    if verb_is(1): printv(1,f"Verbose level: {pargs.verbose}")
+    if verb_is(2): printv(2,f"Verbose level: {pargs.verbose}")
 
     in_dir = Path(pargs.inDir).resolve()
     out_dir = Path(pargs.outDir).resolve()
