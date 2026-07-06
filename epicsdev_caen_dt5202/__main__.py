@@ -8,19 +8,23 @@ This server:
 - updates PVs,
 - moves processed files to an output directory.
 """
-
+# pylint: disable=invalid-name
 from __future__ import annotations
+__version__ = 'v0.0.2 2026-07-02'#
 
 import argparse
 import importlib
 import logging
+import queue
 import shutil
 import signal
 import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
+from threading import Event, Thread
 from typing import Callable, Optional
+from datetime import datetime
 
 # Required by request: server is based on epicsdev module.
 # epicsdev may provide environment/bootstrap pieces in deployments.
@@ -36,13 +40,31 @@ except Exception as exc:  # pragma: no cover - startup dependency check
         "p4p is required to run the PVAccess server. Install p4p in this environment."
     ) from exc
 
+try:
+    from watchdog.events import FileSystemEvent, FileSystemEventHandler
+    from watchdog.observers import Observer
+except Exception as exc:  # pragma: no cover - startup dependency check
+    raise RuntimeError(
+        "watchdog is required to detect new files. Install watchdog in this environment."
+    ) from exc
+
 
 LOG = logging.getLogger("dt5202-pva")
 EPICSDEV_VERSION = getattr(epicsdev, "__version__", "unknown")
 
+#````````````````````````````Necessary explicit globals```````````````````````
+pargs = None# program arguments
+
+def _printTime():
+    return datetime.now().strftime("%m%d:%H%M%S,%f")#[:-3]
+def verb_is(level:int) -> bool:
+    return level <= pargs.verbose
+def printv(level:int, msg: str):
+    print(f'DBG{level}@{_printTime()}: {msg}')
+
 DEFAULT_NUMBER_OF_BOARDS = 1
 MAX_NUMBER_OF_BOARDS = 16
-DEFAULT_MAX_CHANNELS_PER_BOARD = 112
+DEFAULT_MAX_CHANNELS_PER_BOARD = 12
 MAX_MAX_CHANNELS_PER_BOARD = 64
 
 
@@ -97,6 +119,10 @@ class Dt5202PVServer:
 
 
 def parse_run_file(path: Path) -> ParsedRunFile:
+    """Parse a CAEN DT5202 run-list file.
+    Returns a ParsedRunFile object containing the header and rows.
+    """
+    if verb_is(1): printv(1, f"Parsing run file: {path}")
     header: dict[str, str] = {}
     rows: list[RunRow] = []
 
@@ -128,6 +154,7 @@ def parse_run_file(path: Path) -> ParsedRunFile:
             timestamp_us = float(cols[4]) if len(cols) > 4 else None
             trigger_id = int(cols[5]) if len(cols) > 5 else None
             nchs = int(cols[6]) if len(cols) > 6 else None
+            if verb_is(2): printv(2, f"Parsed row: board={board}, channel={channel}, lg={lg}, hg={hg}, timestamp_us={timestamp_us}, trigger_id={trigger_id}, nchs={nchs}") 
 
             rows.append(
                 RunRow(
@@ -151,6 +178,7 @@ def default_user_processor(parsed: ParsedRunFile) -> None:
 
 def load_user_processor(spec: str) -> Callable[[ParsedRunFile], None]:
     """Load callback from MODULE:FUNCTION spec."""
+    if verb_is(1): printv(1, f"Loading user processor: {spec}")
     if ":" not in spec:
         raise ValueError("processor must be in MODULE:FUNCTION format")
 
@@ -163,6 +191,7 @@ def load_user_processor(spec: str) -> Callable[[ParsedRunFile], None]:
 
 
 def compute_board0_channels(parsed: ParsedRunFile, max_channels_per_board: int) -> list[float]:
+    if verb_is(1): printv(1, f"Computing board 0 channels from {len(parsed.rows)} rows")
     values = [0.0] * max_channels_per_board
     for row in parsed.rows:
         if row.board != 0:
@@ -179,6 +208,7 @@ def process_one_file(
     max_channels_per_board: int,
     user_processor: Callable[[ParsedRunFile], None],
 ) -> None:
+    if verb_is(1): printv(1, f"Processing file: {file_path}")
     parsed = parse_run_file(file_path)
 
     user_processor(parsed)
@@ -195,6 +225,48 @@ def process_one_file(
     LOG.info("Moved processed file to %s", destination)
 
 
+def wait_until_file_is_stable(file_path: Path, checks: int = 10, delay_seconds: float = 0.2) -> bool:
+    if verb_is(1): printv(1, f"Waiting for file to stabilize: {file_path}")
+    last_size: Optional[int] = None
+    for _ in range(checks):
+        try:
+            size = file_path.stat().st_size
+        except FileNotFoundError:
+            return False
+
+        if last_size is not None and size == last_size:
+            return True
+
+        last_size = size
+        time.sleep(delay_seconds)
+
+    return False
+
+
+class IncomingFileHandler(FileSystemEventHandler):
+    def __init__(self, in_dir: Path, file_queue: "queue.Queue[Path]"):
+        super().__init__()
+        self.in_dir = in_dir
+        self.file_queue = file_queue
+
+    def _queue_if_file(self, candidate: Path) -> None:
+        if candidate.is_file() and candidate.parent == self.in_dir:
+            self.file_queue.put(candidate)
+
+    def on_created(self, event: FileSystemEvent) -> None:
+        if event.is_directory:
+            return
+        self._queue_if_file(Path(event.src_path).resolve())
+
+    def on_moved(self, event: FileSystemEvent) -> None:
+        if event.is_directory:
+            return
+        dest_path = getattr(event, "dest_path", "")
+        if not dest_path:
+            return
+        self._queue_if_file(Path(dest_path).resolve())
+
+
 def watch_loop(
     in_dir: Path,
     out_dir: Path,
@@ -202,7 +274,6 @@ def watch_loop(
     max_channels_per_board: int,
     user_processor: Callable[[ParsedRunFile], None],
     should_stop: Callable[[], bool],
-    poll_seconds: float = 1.0,
 ) -> None:
     in_dir.mkdir(parents=True, exist_ok=True)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -210,25 +281,24 @@ def watch_loop(
     LOG.info("Watching input directory: %s", in_dir)
     LOG.info("Output directory: %s", out_dir)
 
-    # size cache to avoid processing files that are still being written
-    last_seen_size: dict[Path, int] = {}
+    file_queue: "queue.Queue[Path]" = queue.Queue()
+    stop_event = Event()
 
-    while not should_stop():
-        for file_path in sorted(p for p in in_dir.iterdir() if p.is_file()):
+    for existing_file in sorted(p for p in in_dir.iterdir() if p.is_file()):
+        file_queue.put(existing_file.resolve())
+
+    def worker() -> None:
+        while not stop_event.is_set() or not file_queue.empty():
             try:
-                current_size = file_path.stat().st_size
-            except FileNotFoundError:
+                file_path = file_queue.get(timeout=0.2)
+            except queue.Empty:
                 continue
 
-            previous_size = last_seen_size.get(file_path)
-            if previous_size is None or previous_size != current_size:
-                last_seen_size[file_path] = current_size
-                continue
-
-            # stable size across 2 scans => process
-            last_seen_size.pop(file_path, None)
-
             try:
+                if not wait_until_file_is_stable(file_path):
+                    LOG.warning("Skipping unstable file %s", file_path)
+                    continue
+
                 process_one_file(
                     file_path=file_path,
                     out_dir=out_dir,
@@ -238,16 +308,34 @@ def watch_loop(
                 )
             except (OSError, ValueError, RuntimeError) as exc:
                 LOG.exception("Failed to process %s: %s", file_path, exc)
+            finally:
+                file_queue.task_done()
 
-        time.sleep(poll_seconds)
+    worker_thread = Thread(target=worker, name="dt5202-file-worker", daemon=True)
+    worker_thread.start()
+
+    observer = Observer()
+    observer.schedule(IncomingFileHandler(in_dir.resolve(), file_queue), str(in_dir), recursive=False)
+    observer.start()
+
+    try:
+        while not should_stop():
+            time.sleep(0.2)
+    finally:
+        stop_event.set()
+        observer.stop()
+        observer.join(timeout=5.0)
+        worker_thread.join(timeout=5.0)
 
 
 def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     raw_argv = argv if argv is not None else sys.argv[1:]
 
-    parser = argparse.ArgumentParser(description="CAEN DT5202 PVAccess server")
-    parser.add_argument("--inDir", required=True, help="Directory to watch for new files")
-    parser.add_argument("--outDir", required=True, help="Directory to move processed files")
+    parser = argparse.ArgumentParser(description="CAEN DT5202 PVAccess server",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        epilog=__version__)
+    parser.add_argument("--inDir", default='dataIn', help="Directory to watch for new files")
+    parser.add_argument("--outDir", default='dataOut', help="Directory to move processed files")
     parser.add_argument(
         "--numberOfBoards",
         type=int,
@@ -268,12 +356,15 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
         default="",
         help="Optional callback in MODULE:FUNCTION format",
     )
-    parser.add_argument(
-        "--pollSeconds",
-        type=float,
-        default=1.0,
-        help="Polling interval for input directory",
-    )
+    # parser.add_argument(
+    #     '--verbose',
+    #     choices=['v', 'vv'],
+    #     default=None,
+    #     metavar="LEVEL",
+    #     help="Verbosity level: 'v' for verbose, 'vv' for very verbose.",
+    # )
+    parser.add_argument('-v', '--verbose', action='count', default=0, help=
+        'Show more log messages (-vv: show even more)')
 
     args = parser.parse_args(raw_argv)
 
@@ -288,29 +379,28 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     if args.maxChannelsPerBoard < 1:
         parser.error("--maxChannelsPerBoard must be >= 1")
 
-    if args.pollSeconds <= 0:
-        parser.error("--pollSeconds must be > 0")
-
     return args
 
 
 def main(argv: Optional[list[str]] = None) -> int:
+    global pargs
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
     LOG.info("Using epicsdev version: %s", EPICSDEV_VERSION)
 
-    args = parse_args(argv)
+    pargs = parse_args(argv)
 
-    in_dir = Path(args.inDir).resolve()
-    out_dir = Path(args.outDir).resolve()
+    if verb_is(1): printv(1,f"Verbose level: {pargs.verbose}")
+
+    in_dir = Path(pargs.inDir).resolve()
+    out_dir = Path(pargs.outDir).resolve()
 
     user_processor = default_user_processor
-    if args.processor:
-        user_processor = load_user_processor(args.processor)
-
-    pva = Dt5202PVServer(max_channels_per_board=args.maxChannelsPerBoard)
+    if pargs.processor:
+        user_processor = load_user_processor(pargs.processor)
+    pva = Dt5202PVServer(max_channels_per_board=pargs.maxChannelsPerBoard)
 
     stop = False
 
@@ -326,10 +416,9 @@ def main(argv: Optional[list[str]] = None) -> int:
             in_dir=in_dir,
             out_dir=out_dir,
             pva=pva,
-            max_channels_per_board=args.maxChannelsPerBoard,
+            max_channels_per_board=pargs.maxChannelsPerBoard,
             user_processor=user_processor,
             should_stop=lambda: stop,
-            poll_seconds=args.pollSeconds,
         )
     finally:
         pva.close()
