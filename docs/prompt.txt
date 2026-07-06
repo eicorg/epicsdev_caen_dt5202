@@ -1,9 +1,20 @@
-Create PVAccess server in this directory, using epicsdev module.
-The server should watch specified directory for newly appeared files.
-The file format will be the same as in the data/RunXXX_list.txt.
+Create python module epicsdev_caen_dt5202, based on epicsdev module.
+
+The program should parse following command line options:
+--inDir: directory to watch for new files
+--outDir: directory to store processed files
+--numberOfBoards: integer, default 1, maximum 16.
+--maxChannelsPerBoard: integer, default 24, maximum 64.
+
+The program should:
+ - watch input directory for newly appeared files, 
+ - parse the file to a table. The file format will be the same as in the 
+   data/RunXXX_list.txt.
+ - call a user-supplied function to process the file,
+ - close the file and move it to output directory
+
 
 The following PVs should be created:
-runStartTime: updated from the Run start time field of the header
-brdNchK: 
-
-
+b0Channels: float array with size = maxChannelsPerBoard to store channels of 
+            first board.
+runStartTime: updated from the Run start time field of the file header.
