@@ -10,7 +10,7 @@ This server:
 """
 # pylint: disable=invalid-name
 from __future__ import annotations
-__version__ = 'v0.0.3 2026-07-06'# Parsing and posting of channels is working.
+__version__ = 'v0.0.4 2026-07-07'# epicdev not used, PV names prefixed with  'dt5202:'
 
 import argparse
 import importlib
@@ -28,7 +28,7 @@ from datetime import datetime
 
 # Required by request: server is based on epicsdev module.
 # epicsdev may provide environment/bootstrap pieces in deployments.
-import epicsdev
+#import epicsdev
 
 try:
     # Practical PVAccess backend.
@@ -50,7 +50,7 @@ except Exception as exc:  # pragma: no cover - startup dependency check
 
 
 LOG = logging.getLogger("dt5202-pva")
-EPICSDEV_VERSION = getattr(epicsdev, "__version__", "unknown")
+#EPICSDEV_VERSION = getattr(epicsdev, "__version__", "unknown")
 
 #````````````````````````````Necessary explicit globals```````````````````````
 pargs = None# program arguments
@@ -62,11 +62,11 @@ def verb_is(level:int) -> bool:
 def printv(level:int, msg: str):
     print(f'DBG{level}@{_printTime()}: {msg}')
 
+PREFIX = "dt5202:"
 DEFAULT_NUMBER_OF_BOARDS = 1
 MAX_NUMBER_OF_BOARDS = 16
 DEFAULT_MAX_CHANNELS_PER_BOARD = 12
 MAX_MAX_CHANNELS_PER_BOARD = 64
-
 
 @dataclass(slots=True)
 class TriggedChannels:
@@ -101,8 +101,8 @@ class Dt5202PVServer:
             initial={"value": [0.0] * max_channels_per_board},
         )
 
-        self.provider.add("runStartTime", self.run_start_time_pv)
-        self.provider.add("b0Channels", self.b0_channels_pv)
+        self.provider.add(f"{PREFIX}runStartTime", self.run_start_time_pv)
+        self.provider.add(f"{PREFIX}b0Channels", self.b0_channels_pv)
 
         self._server = Server(providers=[self.provider])
 
@@ -389,7 +389,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
-    LOG.info("Using epicsdev version: %s", EPICSDEV_VERSION)
+    #LOG.info("Using epicsdev version: %s", EPICSDEV_VERSION)
 
     pargs = parse_args(argv)
 
