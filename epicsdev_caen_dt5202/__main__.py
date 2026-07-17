@@ -10,7 +10,7 @@ This server:
 """
 # pylint: disable=invalid-name
 from __future__ import annotations
-__version__ = 'v0.1.0 2026-07-17'# major re-factoring and cleanup
+__version__ = 'v0.1.1a 2026-07-17'# major re-factoring and cleanup
 
 import argparse
 import logging
@@ -123,7 +123,7 @@ def parse_run_file(path: Path):
             channel = int(cols[1])
             if channel not in lgCannels:
                 lgCannels[channel] = []
-                hgCannels[channel] = [] 
+                hgCannels[channel] = []
             lg = float(cols[2])
             hg = float(cols[3])
             #print(f'channel: {channel}, {lg2arr}')
@@ -178,15 +178,16 @@ def process_one_file(file_path: Path, out_dir: Path, pva: Dt5202PVServer):
     shutil.move(str(file_path), str(destination))
     #LOG.info("Moved processed file to %s", destination)
 
-def wait_until_file_is_stable(file_path: Path, checks: int = 10, delay_seconds: float = 0.001):
+def wait_until_file_is_stable(file_path: Path, timeout_seconds: float = 4, delay_seconds: float = 0.5) -> bool:
     if verb_is(2): printv(2, f"Waiting for file to stabilize: {file_path}")
     last_size = None
-    for _ in range(checks):
+    ts = time.time()
+    while time.time() - ts < timeout_seconds:
         try:
             size = file_path.stat().st_size
         except FileNotFoundError:
             return False
-
+        print(f"Checking file size {size} for {last_size} at {time.time() - ts:.2f}s")
         if last_size is not None and size == last_size:
             return True
 
@@ -289,7 +290,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 ElapsedTime = {'process': 0., 'publish': 0., 'poll': 0.}
 def periodic_update():
     """Perform periodic update"""
-    LOG.info('%s',f'Elapsed times during last {C_.cyclesSinceUpdate} cycles: {[(name, round(v,4)) for name, v in ElapsedTime.items()]}')
+    #LOG.info('%s',f'Elapsed times during last {C_.cyclesSinceUpdate} cycles: {[(name, round(v,4)) for name, v in ElapsedTime.items()]}')
+    if verb_is(1): printv(1, f'Elapsed times during last {C_.cyclesSinceUpdate} cycles: {[(name, round(v,4)) for name, v in ElapsedTime.items()]}')
     C_.cyclesSinceUpdate = 0
     for key in ElapsedTime:
         ElapsedTime[key] = 0.
