@@ -1,0 +1,22 @@
+/* C-style comments are supported */
+{
+    "version":2,
+    "clients":[
+        {
+            "name":"client192",
+            "addrlist":"192.168.50.255",
+            "autoaddrlist":false
+        }
+    ],
+    "servers":[
+        {
+            "name":"server104",
+            "clients":["client192"],
+            "interface":["130.199.104.35"],
+            "addrlist":"130.199.104.255",
+            "autoaddrlist":false,
+            "statusprefix":"GW:STS:" /* optional, but suggested */
+        }
+    ]
+}
+
