@@ -10,7 +10,7 @@ This server:
 """
 # pylint: disable=invalid-name
 from __future__ import annotations
-__version__ = 'v0.1.1a 2026-07-17'# major re-factoring and cleanup
+__version__ = 'v0.1.1 2026-07-21'# major re-factoring and cleanup
 
 import argparse
 import logging
@@ -187,7 +187,7 @@ def wait_until_file_is_stable(file_path: Path, timeout_seconds: float = 4, delay
             size = file_path.stat().st_size
         except FileNotFoundError:
             return False
-        print(f"Checking file size {size} for {last_size} at {time.time() - ts:.2f}s")
+        if verb_is(1): printv(1, f"Checking file size {size} for {last_size} at {time.time() - ts:.2f}s")
         if last_size is not None and size == last_size:
             return True
 
@@ -236,6 +236,7 @@ def start_watch( in_dir: Path, out_dir: Path, pva: Dt5202PVServer, ) -> None:
 
     def worker() -> None:
         print("Worker thread started.")
+        fileCount = 0
         while not stop_event.is_set() or not file_queue.empty():
             try:
                 file_path = file_queue.get(timeout=0.2)
@@ -252,6 +253,8 @@ def start_watch( in_dir: Path, out_dir: Path, pva: Dt5202PVServer, ) -> None:
                     out_dir=out_dir,
                     pva=pva,
                 )
+                fileCount += 1
+                LOG.info('%s',f'file#{fileCount} processed {file_path.name}')
             except (OSError, ValueError, RuntimeError) as exc:
                 LOG.exception("Failed to process %s: %s", file_path, exc)
             finally:
