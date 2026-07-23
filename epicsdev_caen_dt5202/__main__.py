@@ -10,7 +10,9 @@ This server:
 """
 # pylint: disable=invalid-name
 from __future__ import annotations
-__version__ = 'v0.1.1 2026-07-21'# major re-factoring and cleanup
+__version__ = 'v0.2.2 2026-07-23'# Device name suffixed with instance number,
+# e.g. dt5202_01:b0LGMean. Added mapfile to support detector channel mapping.
+# Added gainSelector PV.
 
 import argparse
 import logging
@@ -44,10 +46,16 @@ def my_pv_defs():
 ['b0HGMean','High Gain Mean values of board0 chanels, accumulated during run', [0.]],
 ['b0HGRMS','High Gain RMS of board0 chanels, accumulated during run', [0.]],
 ['b0HGP2P','High Gain Peak-to-peak of board0 chanels, accumulated during run', [0.]],
+['gainSelector','Gain selector for sensor arrays', ['LowGain','HighGain'], {F:'WD'}],
     ]
+
+    # add PVs of sensor arrays, if a mapping file is provided
+    if C_.pargs.mapfile:
+        for key in C_.pargs.map:
+            pvdefs.append([key, f'Mean values of {key} sensors', [0.]])
     return pvdefs
 
-LOG = logging.getLogger("dt5202-pva")
+LOG = logging.getLogger("dt5202")
 
 #````````````````````````````Necessary explicit globals```````````````````````
 def _printTime():
@@ -57,13 +65,13 @@ def verb_is(level:int) -> bool:
 def printv(level:int, msg: str):
     print(f'DBG{level}@{_printTime()}: {msg}')
 
-PREFIX = "dt5202:"
 MAX_NUMBER_OF_BOARDS = 16
 MAX_CHANNELS_PER_BOARD = 64
 
 @dataclass(slots=True)
 class C_:
     pargs = None# program arguments
+    prefix = "dt5202"
     cyclesSinceUpdate = 0
 
 @dataclass(slots=True)
@@ -75,13 +83,24 @@ class TriggedChannels:
 
 class Dt5202PVServer:
     def update_b0channels(self, parsed: dict) -> None:
+        gainSelector = str(epicsdev.pvv(f"gainSelector"))
+        print(f"Updating PVs for board 0 channels with gainSelector: {gainSelector}")
         for key in parsed:
             if key.startswith('b0'):
                 channels = [0.] * MAX_CHANNELS_PER_BOARD
                 for ch, value in parsed[key].items():
                     channels[ch] = value
-                #print(f"Updating PV {PREFIX}{key} with value: {channels}")
+                #print(f"Updating PV {key} with value: {channels}")
                 epicsdev.publish(key, channels, t=parsed['run_start_time'])
+
+                # If a mapping file is provided, also publish the mapped detector channels.
+                if C_.pargs.mapfile:
+                    selected = 'b0HGMean' if gainSelector == 'HighGain' else 'b0LGMean'
+                    if key == selected:
+                        for det,idx in C_.pargs.map.items():
+                            shuffled = [channels[i] for i in idx]
+                            #print(f"Updating PV {det} with {selected} values: {shuffled}")
+                            epicsdev.publish(det, shuffled, t=parsed['run_start_time'])
 
     def close(self) -> None:
         print("Closing PV server...")
@@ -223,9 +242,6 @@ file_queue: "queue.Queue[Path]" = queue.Queue()
 def start_watch( in_dir: Path, out_dir: Path, pva: Dt5202PVServer, ) -> None:
     """ Start watching the input directory for new files and process them.
     """
-    in_dir.mkdir(parents=True, exist_ok=True)
-    out_dir.mkdir(parents=True, exist_ok=True)
-
     LOG.info("Watching input directory: %s", in_dir)
     LOG.info("Output directory: %s", out_dir)
 
@@ -274,20 +290,36 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="CAEN DT5202 PVAccess server",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         epilog=__version__)
-    parser.add_argument("-i","--inDir", default='dataIn', help=
-        "Directory to watch for new files")
-    parser.add_argument("-o","--outDir", default='dataOut', help=
-        "Directory to move processed files")
     parser.add_argument("-a","--accumulate", type=float, default=1e6, help=
         "How many events to accumulate in each run")
+    parser.add_argument("-i","--inDir", default='dataIn', help=
+        "Directory to watch for new files, directory name will be suffixed with _[instance]")
+    parser.add_argument("-m","--mapfile", help=
+        "Path to the detector mapping file, e.g config/detector_tandem.py")
     parser.add_argument("-n","--numberOfBoards", type=int, default=1, help=
         "Number of boards max 1)",)
+    parser.add_argument("-o","--outDir", default='dataOut', help=
+        "Directory to move processed files to, directory name will be suffixed with _[instance]")
     parser.add_argument("-v", "--verbose", action="count", default=0, help=
         "Show more log messages (-vv: show even more)")
+    parser.add_argument("instance", default='01', help=
+        "Instance name for PVs, e.g. '01' will create PVs like dt5202_01:b0LGMean")  
     args = parser.parse_args(raw_argv)
 
-    if not 1 <= args.numberOfBoards <= MAX_NUMBER_OF_BOARDS:
-        parser.error(f"--numberOfBoards must be in [1, {MAX_NUMBER_OF_BOARDS}]")
+    args.inDir = f"{args.inDir}_{args.instance}"
+    args.outDir = f"{args.outDir}_{args.instance}"
+    args.prefix = f"dt5202_{args.instance}:"
+
+    if args.mapfile:
+        mapfile_path = Path(args.mapfile).resolve()
+        if not mapfile_path.is_file():
+            parser.error(f"Mapping file {mapfile_path} does not exist or is not a file")
+        sys.path.insert(0, str(mapfile_path.parent))
+        try:
+            import detector_tandem
+            args.map = detector_tandem.Detector
+        except Exception as e:
+            parser.error(f"Failed to import mapping from {mapfile_path}: {e}")
     return args
 
 ElapsedTime = {'process': 0., 'publish': 0., 'poll': 0.}
@@ -313,14 +345,22 @@ def main(argv: Optional[list[str]] = None) -> int:
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
     C_.pargs = parse_args(argv)
-    C_.pargs.accumulate = int(C_.pargs.accumulate)
-
-    if verb_is(2): printv(2,f"Verbose level: {C_.pargs.verbose}")
 
     in_dir = Path(C_.pargs.inDir).resolve()
     out_dir = Path(C_.pargs.outDir).resolve()
+    for dir_path in [in_dir, out_dir]:
+        if not dir_path.exists():
+            LOG.error("Directory %s does not exist", dir_path)
+            #raise FileNotFoundError(f"{dir_path} does not exist")
+            sys.exit(1)
+
+    C_.pargs.accumulate = int(C_.pargs.accumulate)
+    #print(f"Parsed arguments: {C_.pargs}")
+
+    if verb_is(2): printv(2,f"Verbose level: {C_.pargs.verbose}")
+
     pva = Dt5202PVServer()
-    pvs = epicsdev.init_epicsdev(PREFIX, my_pv_defs(), verbose=0)#
+    pvs = epicsdev.init_epicsdev(C_.pargs.prefix, my_pv_defs(), verbose=0)#
     epicsdev.set_server('Start')
     _ = epicsdev.Server(providers=[pvs])# Should assign the server to a variable to prevent it from being garbage collected
 
