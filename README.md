@@ -6,3 +6,5 @@ Once new file is detected it process file, containing information for several tr
 - b0LGMean, b0HGMean: mean value of channel amplitudes for low gain and high gain circuits.
 - b0LGRMS, b0HGRMS: Standard deviations of channel amplitudes.
 - b0LGP2P, b0HGP2P: Peak-to-peak channel amplitudes.
+
+If --mapfile is specified, then additional PVs will be published, containing re-shaffled slices of b0LGMean or b0HGMean according to the mapfile.
