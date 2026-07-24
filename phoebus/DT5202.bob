@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <display version="2.0.0">
-  <name>Display</name>
+  <name>DT5202_basic</name>
   <widget type="label" version="2.0.0">
     <name>Label</name>
     <class>TITLE</class>
-    <text>SiPM Assembly Display</text>
+    <text>DT5202 Basic display</text>
     <x use_class="true">0</x>
     <y use_class="true">0</y>
-    <width>550</width>
+    <width>400</width>
     <height>31</height>
     <font use_class="true">
       <font name="Header 1" family="Liberation Sans" style="BOLD" size="22.0">
@@ -18,33 +18,34 @@
       </color>
     </foreground_color>
     <transparent use_class="true">true</transparent>
+    <horizontal_alignment>1</horizontal_alignment>
   </widget>
   <widget type="label" version="2.0.0">
     <name>Label_1</name>
     <text>Sensors intensities</text>
-    <y>50</y>
+    <y>31</y>
     <width>70</width>
     <height>40</height>
   </widget>
   <widget type="textupdate" version="2.0.0">
     <name>Text Update</name>
-    <pv_name>pva://dt5202:J3i</pv_name>
+    <pv_name>pva://dt5202_01:b0LGMean</pv_name>
     <x>70</x>
-    <y>50</y>
-    <width>700</width>
+    <y>31</y>
+    <width>330</width>
   </widget>
   <widget type="textupdate" version="2.0.0">
     <name>Text Update_2</name>
-    <pv_name>pva://dt5202:J3o</pv_name>
+    <pv_name>pva://dt5202_01:b0HGMean</pv_name>
     <x>71</x>
-    <y>70</y>
-    <width>700</width>
+    <y>51</y>
+    <width>329</width>
   </widget>
   <widget type="xyplot" version="3.0.0">
     <name>X/Y Plot</name>
-    <y>420</y>
+    <y>74</y>
     <x_axis>
-      <title>X</title>
+      <title>Channels of board#0</title>
       <autoscale>true</autoscale>
       <log_scale>false</log_scale>
       <minimum>0.0</minimum>
@@ -62,7 +63,7 @@
     </x_axis>
     <y_axes>
       <y_axis>
-        <title>Y</title>
+        <title>Integrated Intensity [ADC.u]</title>
         <autoscale>true</autoscale>
         <log_scale>false</log_scale>
         <minimum>0.0</minimum>
@@ -88,7 +89,7 @@
       <trace>
         <name>$(traces[0].y_pv)</name>
         <x_pv></x_pv>
-        <y_pv>pva://dt5202:b0LGMean</y_pv>
+        <y_pv>pva://dt5202_01:b0LGMean</y_pv>
         <err_pv></err_pv>
         <axis>0</axis>
         <trace_type>2</trace_type>
@@ -105,7 +106,7 @@
       <trace>
         <name>$(traces[1].y_pv)</name>
         <x_pv></x_pv>
-        <y_pv>pva://dt5202:b0HGMean</y_pv>
+        <y_pv>pva://dt5202_01:b0HGMean</y_pv>
         <err_pv></err_pv>
         <axis>0</axis>
         <trace_type>2</trace_type>
@@ -122,7 +123,7 @@
       <trace>
         <name>$(traces[2].y_pv)</name>
         <x_pv></x_pv>
-        <y_pv>pva://dt5202:b0LGRMS</y_pv>
+        <y_pv>pva://dt5202_01:b0LGRMS</y_pv>
         <err_pv></err_pv>
         <axis>0</axis>
         <trace_type>1</trace_type>
@@ -136,99 +137,23 @@
         <point_size>10</point_size>
         <visible>true</visible>
       </trace>
-    </traces>
-  </widget>
-  <widget type="xyplot" version="3.0.0">
-    <name>J3</name>
-    <y>100</y>
-    <x_axis>
-      <title>J3 sensors</title>
-      <autoscale>true</autoscale>
-      <log_scale>false</log_scale>
-      <minimum>0.0</minimum>
-      <maximum>100.0</maximum>
-      <show_grid>false</show_grid>
-      <title_font>
-        <font name="Default Bold" family="Liberation Sans" style="BOLD" size="14.0">
-        </font>
-      </title_font>
-      <scale_font>
-        <font name="Default" family="Liberation Sans" style="REGULAR" size="14.0">
-        </font>
-      </scale_font>
-      <visible>true</visible>
-    </x_axis>
-    <y_axes>
-      <y_axis>
-        <title>Mean amplitude</title>
-        <autoscale>true</autoscale>
-        <log_scale>false</log_scale>
-        <minimum>0.0</minimum>
-        <maximum>100.0</maximum>
-        <show_grid>false</show_grid>
-        <title_font>
-          <font name="Default Bold" family="Liberation Sans" style="BOLD" size="14.0">
-          </font>
-        </title_font>
-        <scale_font>
-          <font name="Default" family="Liberation Sans" style="REGULAR" size="14.0">
-          </font>
-        </scale_font>
-        <on_right>false</on_right>
-        <visible>true</visible>
-        <color>
-          <color name="Text" red="0" green="0" blue="0">
-          </color>
-        </color>
-      </y_axis>
-    </y_axes>
-    <traces>
       <trace>
-        <name>Inner ring</name>
+        <name>$(traces[3].y_pv)</name>
         <x_pv></x_pv>
-        <y_pv>pva://dt5202:J3i</y_pv>
+        <y_pv>pva://dt5202_01:b0LGP2P</y_pv>
         <err_pv></err_pv>
         <axis>0</axis>
-        <trace_type>2</trace_type>
+        <trace_type>1</trace_type>
         <color>
-          <color red="0" green="0" blue="255">
+          <color red="170" green="0" blue="255">
           </color>
         </color>
-        <line_width>2</line_width>
-        <line_style>0</line_style>
-        <point_type>0</point_type>
-        <point_size>10</point_size>
-        <visible>true</visible>
-      </trace>
-      <trace>
-        <name>Outer ring</name>
-        <x_pv></x_pv>
-        <y_pv>pva://dt5202:J3o</y_pv>
-        <err_pv></err_pv>
-        <axis>0</axis>
-        <trace_type>2</trace_type>
-        <color>
-          <color red="255" green="0" blue="0">
-          </color>
-        </color>
-        <line_width>2</line_width>
+        <line_width>1</line_width>
         <line_style>0</line_style>
         <point_type>0</point_type>
         <point_size>10</point_size>
         <visible>true</visible>
       </trace>
     </traces>
-  </widget>
-  <widget type="label" version="2.0.0">
-    <name>J3 channels</name>
-    <text>J3 sensors</text>
-    <x>150</x>
-    <y>90</y>
-    <width>110</width>
-    <height>30</height>
-    <font>
-      <font name="Header 2" family="Liberation Sans" style="BOLD" size="18.0">
-      </font>
-    </font>
   </widget>
 </display>

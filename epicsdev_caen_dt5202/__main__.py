@@ -10,9 +10,7 @@ This server:
 """
 # pylint: disable=invalid-name
 from __future__ import annotations
-__version__ = 'v0.2.2 2026-07-23'# Device name suffixed with instance number,
-# e.g. dt5202_01:b0LGMean. Added mapfile to support detector channel mapping.
-# Added gainSelector PV.
+__version__ = 'v1.0.0 2026-07-24'# 
 
 import argparse
 import logging
@@ -46,13 +44,12 @@ def my_pv_defs():
 ['b0HGMean','High Gain Mean values of board0 chanels, accumulated during run', [0.]],
 ['b0HGRMS','High Gain RMS of board0 chanels, accumulated during run', [0.]],
 ['b0HGP2P','High Gain Peak-to-peak of board0 chanels, accumulated during run', [0.]],
-['gainSelector','Gain selector for sensor arrays', ['LowGain','HighGain'], {F:'WD'}],
     ]
 
-    # add PVs of sensor arrays, if a mapping file is provided
-    if C_.pargs.mapfile:
-        for key in C_.pargs.map:
-            pvdefs.append([key, f'Mean values of {key} sensors', [0.]])
+    # Add PVs from the plugin.
+    if C_.plugin:
+        pvdefs = pvdefs + C_.plugin.get_pvdefs()
+
     return pvdefs
 
 LOG = logging.getLogger("dt5202")
@@ -72,6 +69,7 @@ MAX_CHANNELS_PER_BOARD = 64
 class C_:
     pargs = None# program arguments
     prefix = "dt5202"
+    plugin = None# plugin module for custom processing
     cyclesSinceUpdate = 0
 
 @dataclass(slots=True)
@@ -83,8 +81,6 @@ class TriggedChannels:
 
 class Dt5202PVServer:
     def update_b0channels(self, parsed: dict) -> None:
-        gainSelector = str(epicsdev.pvv(f"gainSelector"))
-        print(f"Updating PVs for board 0 channels with gainSelector: {gainSelector}")
         for key in parsed:
             if key.startswith('b0'):
                 channels = [0.] * MAX_CHANNELS_PER_BOARD
@@ -92,15 +88,8 @@ class Dt5202PVServer:
                     channels[ch] = value
                 #print(f"Updating PV {key} with value: {channels}")
                 epicsdev.publish(key, channels, t=parsed['run_start_time'])
-
-                # If a mapping file is provided, also publish the mapped detector channels.
-                if C_.pargs.mapfile:
-                    selected = 'b0HGMean' if gainSelector == 'HighGain' else 'b0LGMean'
-                    if key == selected:
-                        for det,idx in C_.pargs.map.items():
-                            shuffled = [channels[i] for i in idx]
-                            #print(f"Updating PV {det} with {selected} values: {shuffled}")
-                            epicsdev.publish(det, shuffled, t=parsed['run_start_time'])
+        if C_.plugin:
+            C_.plugin.publish()
 
     def close(self) -> None:
         print("Closing PV server...")
@@ -294,12 +283,12 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         "How many events to accumulate in each run")
     parser.add_argument("-i","--inDir", default='dataIn', help=
         "Directory to watch for new files, directory name will be suffixed with _[instance]")
-    parser.add_argument("-m","--mapfile", help=
-        "Path to the detector mapping file, e.g config/detector_tandem.py")
     parser.add_argument("-n","--numberOfBoards", type=int, default=1, help=
         "Number of boards max 1)",)
     parser.add_argument("-o","--outDir", default='dataOut', help=
         "Directory to move processed files to, directory name will be suffixed with _[instance]")
+    parser.add_argument("-p", "--plugin", default='beamloss', help=
+        "Plugin name for custom processing, e.g. 'beamloss' will use epicsdev_caen_dt5202.beamloss")
     parser.add_argument("-v", "--verbose", action="count", default=0, help=
         "Show more log messages (-vv: show even more)")
     parser.add_argument("instance", default='01', help=
@@ -309,17 +298,6 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     args.inDir = f"{args.inDir}_{args.instance}"
     args.outDir = f"{args.outDir}_{args.instance}"
     args.prefix = f"dt5202_{args.instance}:"
-
-    if args.mapfile:
-        mapfile_path = Path(args.mapfile).resolve()
-        if not mapfile_path.is_file():
-            parser.error(f"Mapping file {mapfile_path} does not exist or is not a file")
-        sys.path.insert(0, str(mapfile_path.parent))
-        try:
-            import detector_tandem
-            args.map = detector_tandem.Detector
-        except Exception as e:
-            parser.error(f"Failed to import mapping from {mapfile_path}: {e}")
     return args
 
 ElapsedTime = {'process': 0., 'publish': 0., 'poll': 0.}
@@ -339,12 +317,24 @@ def poll():
     ts0 = timer()
     ElapsedTime['poll'] += timer() - ts0
 
-def main(argv: Optional[list[str]] = None) -> int:
+#def main(argv=None):
+def main(argv=None):
+    """Main function to start the PVAccess server for CAEN DT5202 run-list files
+    """
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
     C_.pargs = parse_args(argv)
+
+    if C_.pargs.plugin:
+        try:
+            C_.plugin = __import__(f"epicsdev_caen_dt5202.{C_.pargs.plugin}", fromlist=[''])
+            C_.plugin.init(C_)
+            LOG.info("Loaded plugin: %s", C_.plugin.__name__)
+        except ImportError as e:
+            LOG.error("Failed to load plugin '%s': %s", C_.pargs.plugin, e)
+            sys.exit(1)
 
     in_dir = Path(C_.pargs.inDir).resolve()
     out_dir = Path(C_.pargs.outDir).resolve()
