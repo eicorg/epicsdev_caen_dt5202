@@ -9,9 +9,9 @@ from epicsdev import epicsdev
 _sensorMap = {
     'J3i': [46,2,6,10,14,18,22,26,30,34,38,42],
     'J3o': [44,0,4,8,12,16,20,24,28,32,36,40],
-    #'J4i': [1,45,41,37,33,29,25,21,17,13,9,5],
-    #'J4o': [3,47,43,39,35,31,27,23,19,15,11,7],
-    #'J5': [48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63],
+    'J4i': [1,45,41,37,33,29,25,21,17,13,9,5],
+    'J4o': [3,47,43,39,35,31,27,23,19,15,11,7],
+    'J5': [48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63],
 }
 
 @dataclass(slots=True)
@@ -40,8 +40,8 @@ def polarPoligon(arr, max_value=None):
         radii = values / max_value
 
     angles = np.linspace(0.0, 2.0 * np.pi, num=values.size, endpoint=False)
-    x = radii * np.cos(angles + np.pi/2)
-    y = radii * np.sin(angles + np.pi/2)
+    x = radii * np.cos(np.pi/2 - angles)
+    y = radii * np.sin(np.pi/2 - angles)
     return x, y
 
 # Plugin interface functions
@@ -69,8 +69,8 @@ def get_pvdefs():
     ring_angles = np.linspace(0.0, 2.0 * np.pi, num=64, endpoint=True)
     ringX = np.cos(ring_angles)
     ringY = np.sin(ring_angles)
-    pvdefs.append(["ringX",f"X coordinates of a reference ring", ringX.tolist()])
-    pvdefs.append(["ringY",f"Y coordinates of a reference ring", ringY.tolist()])
+    pvdefs.append(["ringX","X coordinates of a reference ring", ringX.tolist()])
+    pvdefs.append(["ringY","Y coordinates of a reference ring", ringY.tolist()])
 
     pvdefs.append(['gainSelector','Gain selector for sensor arrays', ['LowGain','HighGain'], {F:'WD'}])
     return pvdefs

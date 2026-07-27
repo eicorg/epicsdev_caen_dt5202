@@ -10,7 +10,7 @@ This server:
 """
 # pylint: disable=invalid-name
 from __future__ import annotations
-__version__ = 'v1.0.0 2026-07-24'# 
+__version__ = 'v1.0.1 2026-07-27'# angle direction is clockwise
 
 import argparse
 import logging
