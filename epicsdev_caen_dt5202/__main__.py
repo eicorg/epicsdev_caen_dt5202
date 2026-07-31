@@ -10,7 +10,7 @@ This server:
 """
 # pylint: disable=invalid-name
 from __future__ import annotations
-__version__ = 'v1.0.1 2026-07-27'# angle direction is clockwise
+__version__ = 'v1.0.2 2026-07-31'# scaling factor for each plane
 
 import argparse
 import logging
