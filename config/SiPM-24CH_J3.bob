@@ -1,0 +1,2588 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<display version="2.0.0">
+  <name>Display</name>
+  <width>900</width>
+  <height>900</height>
+  <widget type="rectangle" version="2.0.0">
+    <name>Rectangle_9</name>
+    <x>590</x>
+    <y>193</y>
+    <width>190</width>
+    <height>97</height>
+    <line_width>2</line_width>
+    <line_color>
+      <color name="Text" red="0" green="0" blue="0">
+      </color>
+    </line_color>
+    <background_color>
+      <color name="Header_ForeGround" red="255" green="255" blue="255">
+      </color>
+    </background_color>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Title</name>
+    <class>TITLE</class>
+    <text>Tandem 24CH SiPM Detector</text>
+    <x use_class="true">0</x>
+    <y use_class="true">0</y>
+    <width>425</width>
+    <height>31</height>
+    <font use_class="true">
+      <font name="Header 1" family="Liberation Sans" style="BOLD" size="22.0">
+      </font>
+    </font>
+    <foreground_color use_class="true">
+      <color name="Text" red="0" green="0" blue="0">
+      </color>
+    </foreground_color>
+    <transparent use_class="true">true</transparent>
+    <horizontal_alignment>1</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="group" version="3.0.0">
+    <name>DT5202 Dev0 SiPM J3</name>
+    <y>41</y>
+    <width>423</width>
+    <height>469</height>
+    <style>3</style>
+    <transparent>true</transparent>
+    <widget type="rectangle" version="2.0.0">
+      <name>Rectangle</name>
+      <width>423</width>
+      <height>469</height>
+      <line_color>
+        <color name="Text" red="0" green="0" blue="0">
+        </color>
+      </line_color>
+      <background_color>
+        <color red="77" green="128" blue="77">
+        </color>
+      </background_color>
+    </widget>
+    <widget type="picture" version="2.0.0">
+      <name>Picture</name>
+      <file>../../../../../../home/cfsd/jrenta/Downloads/clipart4103026.png</file>
+      <x>61</x>
+      <y>52</y>
+      <width>300</width>
+      <height>300</height>
+      <visible>false</visible>
+    </widget>
+    <widget type="polygon" version="2.0.0">
+      <name>Polygon_10</name>
+      <macros>
+        <PV>pva://dt5202_01:J3o[24]</PV>
+      </macros>
+      <x>117</x>
+      <y>323</y>
+      <width>29</width>
+      <height>30</height>
+      <points>
+        <point x="29.9796314500378" y="9.804667968750039">
+        </point>
+        <point x="9.700765302104344" y="0.0">
+        </point>
+        <point x="0.0" y="21.204879760742188">
+        </point>
+        <point x="20.583033199919896" y="30.457916259765625">
+        </point>
+        <point x="29.78550975774951" y="10.104667968749936">
+        </point>
+      </points>
+      <line_color>
+        <color name="Text" red="0" green="0" blue="0">
+        </color>
+      </line_color>
+      <background_color>
+        <color red="102" green="77" blue="179">
+        </color>
+      </background_color>
+      <scripts>
+        <script file="EmbeddedJs">
+          <text><![CDATA[/* Embedded javascript */
+importClass(org.csstudio.display.builder.runtime.script.PVUtil);
+importClass(org.csstudio.display.builder.runtime.script.ColorFontUtil);
+importClass(org.csstudio.display.builder.runtime.script.ScriptUtil);
+
+
+
+var value = PVUtil.getDouble(pvs[0]); 
+var minVal = 0.0;
+var maxVal = 5000.0;
+
+// Normalizing 0 to 1
+var t = (value - minVal) / (maxVal - minVal);
+if(t < 0.0) t = 0.0;
+if(t > 1.0) t = 1.0;
+
+function lerp(a,b,x){
+    return a + (b-a) * x;
+}
+
+function lerpColor(c1, c2, x){
+    return [
+        Math.round(lerp(c1[0], c2[0], x)),
+        Math.round(lerp(c1[1], c2[1], x)),
+        Math.round(lerp(c1[2], c2[2], x))
+    ];
+}
+
+
+// Heatmap Color Stops
+var stops = [
+    [0,  0, 0],
+    [80, 0, 0],
+    [200,0, 0], 
+    [255,120,0],
+    [255,255,0],
+    [255,255,255]
+];
+
+// Pick which segment we are in
+var n = stops.length - 1;
+var pos = t * n;
+var idx = Math.floor(pos);
+
+if(idx >= n) idx = n -1;
+
+var localT = pos - idx;
+var rgb = lerpColor(stops[idx], stops[idx + 1], localT);
+
+
+
+
+widget.setPropertyValue(
+    "background_color",
+    ColorFontUtil.getColorFromRGB(rgb[0], rgb[1], rgb[2])
+);
+
+
+
+]]></text>
+          <pv_name>$(PV)</pv_name>
+        </script>
+      </scripts>
+    </widget>
+    <widget type="polygon" version="2.0.0">
+      <name>Polygon_16</name>
+      <macros>
+        <PV>pva://dt5202_01:J3o[40]</PV>
+      </macros>
+      <x>117</x>
+      <y>49</y>
+      <width>29</width>
+      <height>31</height>
+      <points>
+        <point x="29.954407502580693" y="19.46194599298545">
+        </point>
+        <point x="18.365217234144723" y="0.0">
+        </point>
+        <point x="0.0" y="12.717343464926358">
+        </point>
+        <point x="11.412048649251858" y="31.722657988185304">
+        </point>
+        <point x="29.30489361908957" y="19.84431685719531">
+        </point>
+      </points>
+      <line_color>
+        <color name="Text" red="0" green="0" blue="0">
+        </color>
+      </line_color>
+      <background_color>
+        <color red="102" green="77" blue="179">
+        </color>
+      </background_color>
+      <scripts>
+        <script file="EmbeddedJs">
+          <text><![CDATA[/* Embedded javascript */
+importClass(org.csstudio.display.builder.runtime.script.PVUtil);
+importClass(org.csstudio.display.builder.runtime.script.ColorFontUtil);
+importClass(org.csstudio.display.builder.runtime.script.ScriptUtil);
+
+
+
+var value = PVUtil.getDouble(pvs[0]); 
+var minVal = 0.0;
+var maxVal = 5000.0;
+
+// Normalizing 0 to 1
+var t = (value - minVal) / (maxVal - minVal);
+if(t < 0.0) t = 0.0;
+if(t > 1.0) t = 1.0;
+
+function lerp(a,b,x){
+    return a + (b-a) * x;
+}
+
+function lerpColor(c1, c2, x){
+    return [
+        Math.round(lerp(c1[0], c2[0], x)),
+        Math.round(lerp(c1[1], c2[1], x)),
+        Math.round(lerp(c1[2], c2[2], x))
+    ];
+}
+
+
+// Heatmap Color Stops
+var stops = [
+    [0,  0, 0],
+    [80, 0, 0],
+    [200,0, 0], 
+    [255,120,0],
+    [255,255,0],
+    [255,255,255]
+];
+
+// Pick which segment we are in
+var n = stops.length - 1;
+var pos = t * n;
+var idx = Math.floor(pos);
+
+if(idx >= n) idx = n -1;
+
+var localT = pos - idx;
+var rgb = lerpColor(stops[idx], stops[idx + 1], localT);
+
+
+
+
+widget.setPropertyValue(
+    "background_color",
+    ColorFontUtil.getColorFromRGB(rgb[0], rgb[1], rgb[2])
+);
+
+
+
+]]></text>
+          <pv_name>$(PV)</pv_name>
+        </script>
+      </scripts>
+    </widget>
+    <widget type="ellipse" version="2.0.0">
+      <name>Ellipse</name>
+      <x>102</x>
+      <y>92</y>
+      <width>220</width>
+      <height>220</height>
+      <line_color>
+        <color name="Text" red="0" green="0" blue="0">
+        </color>
+      </line_color>
+      <background_color>
+        <color name="Text" red="0" green="0" blue="0">
+        </color>
+      </background_color>
+    </widget>
+    <widget type="label" version="2.0.0">
+      <name>Label_1</name>
+      <text>TANDEM SEU SiPM Detector</text>
+      <x>29</x>
+      <y>402</y>
+      <width>367</width>
+      <font>
+        <font name="Default Bold" family="Liberation Sans" style="BOLD" size="14.0">
+        </font>
+      </font>
+      <horizontal_alignment>1</horizontal_alignment>
+      <vertical_alignment>1</vertical_alignment>
+    </widget>
+    <widget type="label" version="2.0.0">
+      <name>Label_2</name>
+      <text>DT5202 Device 0 Port J3</text>
+      <x>29</x>
+      <y>422</y>
+      <width>367</width>
+      <font>
+        <font name="Default Bold" family="Liberation Sans" style="BOLD" size="14.0">
+        </font>
+      </font>
+      <horizontal_alignment>1</horizontal_alignment>
+      <vertical_alignment>1</vertical_alignment>
+    </widget>
+    <widget type="label" version="2.0.0">
+      <name>Label_3</name>
+      <text>IC12</text>
+      <x>197</x>
+      <y>6</y>
+      <width>30</width>
+      <height>16</height>
+      <auto_size>true</auto_size>
+    </widget>
+    <widget type="label" version="2.0.0">
+      <name>Label_4</name>
+      <text>IC6</text>
+      <x>201</x>
+      <y>379</y>
+      <width>22</width>
+      <height>16</height>
+      <auto_size>true</auto_size>
+    </widget>
+    <widget type="label" version="2.0.0">
+      <name>Label_5</name>
+      <text>IC3</text>
+      <x>391</x>
+      <y>193</y>
+      <width>22</width>
+      <height>16</height>
+      <auto_size>true</auto_size>
+    </widget>
+    <widget type="label" version="2.0.0">
+      <name>Label_6</name>
+      <text>IC9</text>
+      <x>11</x>
+      <y>193</y>
+      <width>22</width>
+      <height>16</height>
+      <auto_size>true</auto_size>
+    </widget>
+    <widget type="label" version="2.0.0">
+      <name>Label_7</name>
+      <text>IC1</text>
+      <x>291</x>
+      <y>32</y>
+      <width>22</width>
+      <height>16</height>
+      <auto_size>true</auto_size>
+    </widget>
+    <widget type="label" version="2.0.0">
+      <name>Label_8</name>
+      <text>IC2</text>
+      <x>364</x>
+      <y>100</y>
+      <width>22</width>
+      <height>16</height>
+      <auto_size>true</auto_size>
+    </widget>
+    <widget type="label" version="2.0.0">
+      <name>Label_9</name>
+      <text>IC4</text>
+      <x>366</x>
+      <y>281</y>
+      <width>22</width>
+      <height>16</height>
+      <auto_size>true</auto_size>
+    </widget>
+    <widget type="label" version="2.0.0">
+      <name>Label_10</name>
+      <text>IC5</text>
+      <x>293</x>
+      <y>354</y>
+      <width>22</width>
+      <height>16</height>
+      <auto_size>true</auto_size>
+    </widget>
+    <widget type="label" version="2.0.0">
+      <name>Label_11</name>
+      <text>IC7</text>
+      <x>113</x>
+      <y>355</y>
+      <width>22</width>
+      <height>16</height>
+      <auto_size>true</auto_size>
+    </widget>
+    <widget type="label" version="2.0.0">
+      <name>Label_12</name>
+      <text>IC8</text>
+      <x>42</x>
+      <y>293</y>
+      <width>22</width>
+      <height>16</height>
+      <auto_size>true</auto_size>
+    </widget>
+    <widget type="label" version="2.0.0">
+      <name>Label_13</name>
+      <text>IC10</text>
+      <x>34</x>
+      <y>95</y>
+      <width>30</width>
+      <height>16</height>
+      <auto_size>true</auto_size>
+    </widget>
+    <widget type="label" version="2.0.0">
+      <name>Label_14</name>
+      <text>IC11</text>
+      <x>102</x>
+      <y>31</y>
+      <width>30</width>
+      <height>16</height>
+      <auto_size>true</auto_size>
+    </widget>
+    <widget type="polygon" version="2.0.0">
+      <name>Polygon_11</name>
+      <macros>
+        <PV>pva://dt5202_01:J3i[26]</PV>
+      </macros>
+      <x>127</x>
+      <y>301</y>
+      <width>30</width>
+      <height>30</height>
+      <points>
+        <point x="30.22163145003782" y="10.40966796875">
+        </point>
+        <point x="9.700765302104344" y="0.0">
+        </point>
+        <point x="0.0" y="21.204879760742188">
+        </point>
+        <point x="20.583033199919896" y="30.457916259765625">
+        </point>
+        <point x="30.14850975774951" y="10.709667968749983">
+        </point>
+      </points>
+      <line_color>
+        <color name="Text" red="0" green="0" blue="0">
+        </color>
+      </line_color>
+      <background_color>
+        <color red="102" green="77" blue="179">
+        </color>
+      </background_color>
+      <scripts>
+        <script file="EmbeddedJs">
+          <text><![CDATA[/* Embedded javascript */
+importClass(org.csstudio.display.builder.runtime.script.PVUtil);
+importClass(org.csstudio.display.builder.runtime.script.ColorFontUtil);
+importClass(org.csstudio.display.builder.runtime.script.ScriptUtil);
+
+
+
+var value = PVUtil.getDouble(pvs[0]); 
+var minVal = 0.0;
+var maxVal = 5000.0;
+
+// Normalizing 0 to 1
+var t = (value - minVal) / (maxVal - minVal);
+if(t < 0.0) t = 0.0;
+if(t > 1.0) t = 1.0;
+
+function lerp(a,b,x){
+    return a + (b-a) * x;
+}
+
+function lerpColor(c1, c2, x){
+    return [
+        Math.round(lerp(c1[0], c2[0], x)),
+        Math.round(lerp(c1[1], c2[1], x)),
+        Math.round(lerp(c1[2], c2[2], x))
+    ];
+}
+
+
+// Heatmap Color Stops
+var stops = [
+    [0,  0, 0],
+    [80, 0, 0],
+    [200,0, 0], 
+    [255,120,0],
+    [255,255,0],
+    [255,255,255]
+];
+
+// Pick which segment we are in
+var n = stops.length - 1;
+var pos = t * n;
+var idx = Math.floor(pos);
+
+if(idx >= n) idx = n -1;
+
+var localT = pos - idx;
+var rgb = lerpColor(stops[idx], stops[idx + 1], localT);
+
+
+
+
+widget.setPropertyValue(
+    "background_color",
+    ColorFontUtil.getColorFromRGB(rgb[0], rgb[1], rgb[2])
+);
+
+
+
+]]></text>
+          <pv_name>$(PV)</pv_name>
+        </script>
+      </scripts>
+    </widget>
+    <widget type="polygon" version="2.0.0">
+      <name>Polygon_18</name>
+      <macros>
+        <PV>pva://dt5202_01:J3i[2]</PV>
+      </macros>
+      <x>265</x>
+      <y>70</y>
+      <width>30</width>
+      <height>30</height>
+      <points>
+        <point x="30.22163145003782" y="10.40966796875">
+        </point>
+        <point x="9.700765302104344" y="0.0">
+        </point>
+        <point x="0.0" y="21.204879760742188">
+        </point>
+        <point x="20.583033199919896" y="30.457916259765625">
+        </point>
+        <point x="30.14850975774951" y="10.709667968749983">
+        </point>
+      </points>
+      <line_color>
+        <color name="Text" red="0" green="0" blue="0">
+        </color>
+      </line_color>
+      <background_color>
+        <color red="102" green="77" blue="179">
+        </color>
+      </background_color>
+      <scripts>
+        <script file="EmbeddedJs">
+          <text><![CDATA[/* Embedded javascript */
+importClass(org.csstudio.display.builder.runtime.script.PVUtil);
+importClass(org.csstudio.display.builder.runtime.script.ColorFontUtil);
+importClass(org.csstudio.display.builder.runtime.script.ScriptUtil);
+
+
+
+var value = PVUtil.getDouble(pvs[0]); 
+var minVal = 0.0;
+var maxVal = 5000.0;
+
+// Normalizing 0 to 1
+var t = (value - minVal) / (maxVal - minVal);
+if(t < 0.0) t = 0.0;
+if(t > 1.0) t = 1.0;
+
+function lerp(a,b,x){
+    return a + (b-a) * x;
+}
+
+function lerpColor(c1, c2, x){
+    return [
+        Math.round(lerp(c1[0], c2[0], x)),
+        Math.round(lerp(c1[1], c2[1], x)),
+        Math.round(lerp(c1[2], c2[2], x))
+    ];
+}
+
+
+// Heatmap Color Stops
+var stops = [
+    [0,  0, 0],
+    [80, 0, 0],
+    [200,0, 0], 
+    [255,120,0],
+    [255,255,0],
+    [255,255,255]
+];
+
+// Pick which segment we are in
+var n = stops.length - 1;
+var pos = t * n;
+var idx = Math.floor(pos);
+
+if(idx >= n) idx = n -1;
+
+var localT = pos - idx;
+var rgb = lerpColor(stops[idx], stops[idx + 1], localT);
+
+
+
+
+widget.setPropertyValue(
+    "background_color",
+    ColorFontUtil.getColorFromRGB(rgb[0], rgb[1], rgb[2])
+);
+
+
+
+]]></text>
+          <pv_name>$(PV)</pv_name>
+        </script>
+      </scripts>
+    </widget>
+    <widget type="polygon" version="2.0.0">
+      <name>Polygon_19</name>
+      <macros>
+        <PV>pva://dt5202_01:J3o[0]</PV>
+      </macros>
+      <x>276</x>
+      <y>47</y>
+      <width>30</width>
+      <height>31</height>
+      <points>
+        <point x="30.22163145003782" y="10.40966796875">
+        </point>
+        <point x="9.700765302104344" y="0.0">
+        </point>
+        <point x="0.0" y="21.204879760742188">
+        </point>
+        <point x="20.04310662199731" y="31.82014121009078">
+        </point>
+        <point x="30.14850975774948" y="10.709667968749983">
+        </point>
+      </points>
+      <line_color>
+        <color name="Text" red="0" green="0" blue="0">
+        </color>
+      </line_color>
+      <background_color>
+        <color red="102" green="77" blue="179">
+        </color>
+      </background_color>
+      <scripts>
+        <script file="EmbeddedJs">
+          <text><![CDATA[/* Embedded javascript */
+importClass(org.csstudio.display.builder.runtime.script.PVUtil);
+importClass(org.csstudio.display.builder.runtime.script.ColorFontUtil);
+importClass(org.csstudio.display.builder.runtime.script.ScriptUtil);
+
+
+
+var value = PVUtil.getDouble(pvs[0]); 
+var minVal = 0.0;
+var maxVal = 5000.0;
+
+// Normalizing 0 to 1
+var t = (value - minVal) / (maxVal - minVal);
+if(t < 0.0) t = 0.0;
+if(t > 1.0) t = 1.0;
+
+function lerp(a,b,x){
+    return a + (b-a) * x;
+}
+
+function lerpColor(c1, c2, x){
+    return [
+        Math.round(lerp(c1[0], c2[0], x)),
+        Math.round(lerp(c1[1], c2[1], x)),
+        Math.round(lerp(c1[2], c2[2], x))
+    ];
+}
+
+
+// Heatmap Color Stops
+var stops = [
+    [0,  0, 0],
+    [80, 0, 0],
+    [200,0, 0], 
+    [255,120,0],
+    [255,255,0],
+    [255,255,255]
+];
+
+// Pick which segment we are in
+var n = stops.length - 1;
+var pos = t * n;
+var idx = Math.floor(pos);
+
+if(idx >= n) idx = n -1;
+
+var localT = pos - idx;
+var rgb = lerpColor(stops[idx], stops[idx + 1], localT);
+
+
+
+
+widget.setPropertyValue(
+    "background_color",
+    ColorFontUtil.getColorFromRGB(rgb[0], rgb[1], rgb[2])
+);
+
+
+
+]]></text>
+          <pv_name>$(PV)</pv_name>
+        </script>
+      </scripts>
+    </widget>
+    <widget type="polygon" version="2.0.0">
+      <name>Polygon_20</name>
+      <macros>
+        <PV>pva://dt5202_01:J3i[38]</PV>
+      </macros>
+      <x>78</x>
+      <y>119</y>
+      <width>30</width>
+      <height>30</height>
+      <points>
+        <point x="30.22163145003782" y="10.40966796875">
+        </point>
+        <point x="9.700765302104344" y="0.0">
+        </point>
+        <point x="0.0" y="21.204879760742188">
+        </point>
+        <point x="20.583033199919896" y="30.457916259765625">
+        </point>
+        <point x="30.14850975774951" y="10.709667968749983">
+        </point>
+      </points>
+      <line_color>
+        <color name="Text" red="0" green="0" blue="0">
+        </color>
+      </line_color>
+      <background_color>
+        <color red="102" green="77" blue="179">
+        </color>
+      </background_color>
+      <scripts>
+        <script file="EmbeddedJs">
+          <text><![CDATA[/* Embedded javascript */
+importClass(org.csstudio.display.builder.runtime.script.PVUtil);
+importClass(org.csstudio.display.builder.runtime.script.ColorFontUtil);
+importClass(org.csstudio.display.builder.runtime.script.ScriptUtil);
+
+
+
+var value = PVUtil.getDouble(pvs[0]); 
+var minVal = 0.0;
+var maxVal = 5000.0;
+
+// Normalizing 0 to 1
+var t = (value - minVal) / (maxVal - minVal);
+if(t < 0.0) t = 0.0;
+if(t > 1.0) t = 1.0;
+
+function lerp(a,b,x){
+    return a + (b-a) * x;
+}
+
+function lerpColor(c1, c2, x){
+    return [
+        Math.round(lerp(c1[0], c2[0], x)),
+        Math.round(lerp(c1[1], c2[1], x)),
+        Math.round(lerp(c1[2], c2[2], x))
+    ];
+}
+
+
+// Heatmap Color Stops
+var stops = [
+    [0,  0, 0],
+    [80, 0, 0],
+    [200,0, 0], 
+    [255,120,0],
+    [255,255,0],
+    [255,255,255]
+];
+
+// Pick which segment we are in
+var n = stops.length - 1;
+var pos = t * n;
+var idx = Math.floor(pos);
+
+if(idx >= n) idx = n -1;
+
+var localT = pos - idx;
+var rgb = lerpColor(stops[idx], stops[idx + 1], localT);
+
+
+
+
+widget.setPropertyValue(
+    "background_color",
+    ColorFontUtil.getColorFromRGB(rgb[0], rgb[1], rgb[2])
+);
+
+
+
+]]></text>
+          <pv_name>$(PV)</pv_name>
+        </script>
+      </scripts>
+    </widget>
+    <widget type="polygon" version="2.0.0">
+      <name>Polygon_22</name>
+      <macros>
+        <PV>pva://dt5202_01:J3i[14]</PV>
+      </macros>
+      <x>313</x>
+      <y>256</y>
+      <width>30</width>
+      <height>30</height>
+      <points>
+        <point x="30.22163145003782" y="10.40966796875">
+        </point>
+        <point x="9.700765302104344" y="0.0">
+        </point>
+        <point x="0.0" y="21.204879760742188">
+        </point>
+        <point x="20.583033199919896" y="30.457916259765625">
+        </point>
+        <point x="30.14850975774951" y="10.709667968749983">
+        </point>
+      </points>
+      <line_color>
+        <color name="Text" red="0" green="0" blue="0">
+        </color>
+      </line_color>
+      <background_color>
+        <color red="102" green="77" blue="179">
+        </color>
+      </background_color>
+      <scripts>
+        <script file="EmbeddedJs">
+          <text><![CDATA[/* Embedded javascript */
+importClass(org.csstudio.display.builder.runtime.script.PVUtil);
+importClass(org.csstudio.display.builder.runtime.script.ColorFontUtil);
+importClass(org.csstudio.display.builder.runtime.script.ScriptUtil);
+
+
+
+var value = PVUtil.getDouble(pvs[0]); 
+var minVal = 0.0;
+var maxVal = 5000.0;
+
+// Normalizing 0 to 1
+var t = (value - minVal) / (maxVal - minVal);
+if(t < 0.0) t = 0.0;
+if(t > 1.0) t = 1.0;
+
+function lerp(a,b,x){
+    return a + (b-a) * x;
+}
+
+function lerpColor(c1, c2, x){
+    return [
+        Math.round(lerp(c1[0], c2[0], x)),
+        Math.round(lerp(c1[1], c2[1], x)),
+        Math.round(lerp(c1[2], c2[2], x))
+    ];
+}
+
+
+// Heatmap Color Stops
+var stops = [
+    [0,  0, 0],
+    [80, 0, 0],
+    [200,0, 0], 
+    [255,120,0],
+    [255,255,0],
+    [255,255,255]
+];
+
+// Pick which segment we are in
+var n = stops.length - 1;
+var pos = t * n;
+var idx = Math.floor(pos);
+
+if(idx >= n) idx = n -1;
+
+var localT = pos - idx;
+var rgb = lerpColor(stops[idx], stops[idx + 1], localT);
+
+
+
+
+widget.setPropertyValue(
+    "background_color",
+    ColorFontUtil.getColorFromRGB(rgb[0], rgb[1], rgb[2])
+);
+
+
+
+]]></text>
+          <pv_name>$(PV)</pv_name>
+        </script>
+      </scripts>
+    </widget>
+    <widget type="polygon" version="2.0.0">
+      <name>Polygon_23</name>
+      <macros>
+        <PV>pva://dt5202_01:J3o[12]</PV>
+      </macros>
+      <x>334</x>
+      <y>266</y>
+      <width>28</width>
+      <height>29</height>
+      <points>
+        <point x="28.82771145003784" y="9.594127968750058">
+        </point>
+        <point x="8.701305302104345" y="0.0">
+        </point>
+        <point x="0.0" y="20.63133976074215">
+        </point>
+        <point x="20.067573199919877" y="29.642376259765626">
+        </point>
+        <point x="28.60817975774944" y="9.894127968749956">
+        </point>
+      </points>
+      <line_color>
+        <color name="Text" red="0" green="0" blue="0">
+        </color>
+      </line_color>
+      <background_color>
+        <color red="102" green="77" blue="179">
+        </color>
+      </background_color>
+      <scripts>
+        <script file="EmbeddedJs">
+          <text><![CDATA[/* Embedded javascript */
+importClass(org.csstudio.display.builder.runtime.script.PVUtil);
+importClass(org.csstudio.display.builder.runtime.script.ColorFontUtil);
+importClass(org.csstudio.display.builder.runtime.script.ScriptUtil);
+
+
+
+var value = PVUtil.getDouble(pvs[0]); 
+var minVal = 0.0;
+var maxVal = 5000.0;
+
+// Normalizing 0 to 1
+var t = (value - minVal) / (maxVal - minVal);
+if(t < 0.0) t = 0.0;
+if(t > 1.0) t = 1.0;
+
+function lerp(a,b,x){
+    return a + (b-a) * x;
+}
+
+function lerpColor(c1, c2, x){
+    return [
+        Math.round(lerp(c1[0], c2[0], x)),
+        Math.round(lerp(c1[1], c2[1], x)),
+        Math.round(lerp(c1[2], c2[2], x))
+    ];
+}
+
+
+// Heatmap Color Stops
+var stops = [
+    [0,  0, 0],
+    [80, 0, 0],
+    [200,0, 0], 
+    [255,120,0],
+    [255,255,0],
+    [255,255,255]
+];
+
+// Pick which segment we are in
+var n = stops.length - 1;
+var pos = t * n;
+var idx = Math.floor(pos);
+
+if(idx >= n) idx = n -1;
+
+var localT = pos - idx;
+var rgb = lerpColor(stops[idx], stops[idx + 1], localT);
+
+
+
+
+widget.setPropertyValue(
+    "background_color",
+    ColorFontUtil.getColorFromRGB(rgb[0], rgb[1], rgb[2])
+);
+
+
+
+]]></text>
+          <pv_name>$(PV)</pv_name>
+        </script>
+      </scripts>
+    </widget>
+    <widget type="polygon" version="2.0.0">
+      <name>Polygon_24</name>
+      <macros>
+        <PV>pva://dt5202_01:J3i[42]</PV>
+      </macros>
+      <x>129</x>
+      <y>69</y>
+      <width>30</width>
+      <height>31</height>
+      <points>
+        <point x="30.454407502580693" y="18.861945992985454">
+        </point>
+        <point x="18.365217234144723" y="0.0">
+        </point>
+        <point x="0.0" y="12.717343464926358">
+        </point>
+        <point x="11.912048649251858" y="31.422657988185307">
+        </point>
+        <point x="30.10489361908958" y="19.244316857195315">
+        </point>
+      </points>
+      <line_color>
+        <color name="Text" red="0" green="0" blue="0">
+        </color>
+      </line_color>
+      <background_color>
+        <color red="102" green="77" blue="179">
+        </color>
+      </background_color>
+      <scripts>
+        <script file="EmbeddedJs">
+          <text><![CDATA[/* Embedded javascript */
+importClass(org.csstudio.display.builder.runtime.script.PVUtil);
+importClass(org.csstudio.display.builder.runtime.script.ColorFontUtil);
+importClass(org.csstudio.display.builder.runtime.script.ScriptUtil);
+
+
+
+var value = PVUtil.getDouble(pvs[0]); 
+var minVal = 0.0;
+var maxVal = 5000.0;
+
+// Normalizing 0 to 1
+var t = (value - minVal) / (maxVal - minVal);
+if(t < 0.0) t = 0.0;
+if(t > 1.0) t = 1.0;
+
+function lerp(a,b,x){
+    return a + (b-a) * x;
+}
+
+function lerpColor(c1, c2, x){
+    return [
+        Math.round(lerp(c1[0], c2[0], x)),
+        Math.round(lerp(c1[1], c2[1], x)),
+        Math.round(lerp(c1[2], c2[2], x))
+    ];
+}
+
+
+// Heatmap Color Stops
+var stops = [
+    [0,  0, 0],
+    [80, 0, 0],
+    [200,0, 0], 
+    [255,120,0],
+    [255,255,0],
+    [255,255,255]
+];
+
+// Pick which segment we are in
+var n = stops.length - 1;
+var pos = t * n;
+var idx = Math.floor(pos);
+
+if(idx >= n) idx = n -1;
+
+var localT = pos - idx;
+var rgb = lerpColor(stops[idx], stops[idx + 1], localT);
+
+
+
+
+widget.setPropertyValue(
+    "background_color",
+    ColorFontUtil.getColorFromRGB(rgb[0], rgb[1], rgb[2])
+);
+
+
+
+]]></text>
+          <pv_name>$(PV)</pv_name>
+        </script>
+      </scripts>
+    </widget>
+    <widget type="polygon" version="2.0.0">
+      <name>Polygon_25</name>
+      <macros>
+        <PV>pva://dt5202_01:J3i[6]</PV>
+      </macros>
+      <x>315</x>
+      <y>121</y>
+      <width>30</width>
+      <height>31</height>
+      <points>
+        <point x="30.454407502580693" y="18.861945992985454">
+        </point>
+        <point x="18.365217234144723" y="0.0">
+        </point>
+        <point x="0.0" y="12.717343464926358">
+        </point>
+        <point x="11.912048649251858" y="31.422657988185307">
+        </point>
+        <point x="30.10489361908958" y="19.244316857195315">
+        </point>
+      </points>
+      <line_color>
+        <color name="Text" red="0" green="0" blue="0">
+        </color>
+      </line_color>
+      <background_color>
+        <color red="102" green="77" blue="179">
+        </color>
+      </background_color>
+      <scripts>
+        <script file="EmbeddedJs">
+          <text><![CDATA[/* Embedded javascript */
+importClass(org.csstudio.display.builder.runtime.script.PVUtil);
+importClass(org.csstudio.display.builder.runtime.script.ColorFontUtil);
+importClass(org.csstudio.display.builder.runtime.script.ScriptUtil);
+
+
+
+var value = PVUtil.getDouble(pvs[0]); 
+var minVal = 0.0;
+var maxVal = 5000.0;
+
+// Normalizing 0 to 1
+var t = (value - minVal) / (maxVal - minVal);
+if(t < 0.0) t = 0.0;
+if(t > 1.0) t = 1.0;
+
+function lerp(a,b,x){
+    return a + (b-a) * x;
+}
+
+function lerpColor(c1, c2, x){
+    return [
+        Math.round(lerp(c1[0], c2[0], x)),
+        Math.round(lerp(c1[1], c2[1], x)),
+        Math.round(lerp(c1[2], c2[2], x))
+    ];
+}
+
+
+// Heatmap Color Stops
+var stops = [
+    [0,  0, 0],
+    [80, 0, 0],
+    [200,0, 0], 
+    [255,120,0],
+    [255,255,0],
+    [255,255,255]
+];
+
+// Pick which segment we are in
+var n = stops.length - 1;
+var pos = t * n;
+var idx = Math.floor(pos);
+
+if(idx >= n) idx = n -1;
+
+var localT = pos - idx;
+var rgb = lerpColor(stops[idx], stops[idx + 1], localT);
+
+
+
+
+widget.setPropertyValue(
+    "background_color",
+    ColorFontUtil.getColorFromRGB(rgb[0], rgb[1], rgb[2])
+);
+
+
+
+]]></text>
+          <pv_name>$(PV)</pv_name>
+        </script>
+      </scripts>
+    </widget>
+    <widget type="polygon" version="2.0.0">
+      <name>Polygon_26</name>
+      <macros>
+        <PV>pva://dt5202_01:J3o[4]</PV>
+      </macros>
+      <x>334</x>
+      <y>108</y>
+      <width>30</width>
+      <height>31</height>
+      <points>
+        <point x="30.454407502580693" y="18.861945992985454">
+        </point>
+        <point x="18.365217234144723" y="0.0">
+        </point>
+        <point x="0.0" y="12.717343464926358">
+        </point>
+        <point x="11.912048649251858" y="31.422657988185307">
+        </point>
+        <point x="30.10489361908958" y="19.244316857195315">
+        </point>
+      </points>
+      <line_color>
+        <color name="Text" red="0" green="0" blue="0">
+        </color>
+      </line_color>
+      <background_color>
+        <color red="102" green="77" blue="179">
+        </color>
+      </background_color>
+      <scripts>
+        <script file="EmbeddedJs">
+          <text><![CDATA[/* Embedded javascript */
+importClass(org.csstudio.display.builder.runtime.script.PVUtil);
+importClass(org.csstudio.display.builder.runtime.script.ColorFontUtil);
+importClass(org.csstudio.display.builder.runtime.script.ScriptUtil);
+
+
+
+var value = PVUtil.getDouble(pvs[0]); 
+var minVal = 0.0;
+var maxVal = 5000.0;
+
+// Normalizing 0 to 1
+var t = (value - minVal) / (maxVal - minVal);
+if(t < 0.0) t = 0.0;
+if(t > 1.0) t = 1.0;
+
+function lerp(a,b,x){
+    return a + (b-a) * x;
+}
+
+function lerpColor(c1, c2, x){
+    return [
+        Math.round(lerp(c1[0], c2[0], x)),
+        Math.round(lerp(c1[1], c2[1], x)),
+        Math.round(lerp(c1[2], c2[2], x))
+    ];
+}
+
+
+// Heatmap Color Stops
+var stops = [
+    [0,  0, 0],
+    [80, 0, 0],
+    [200,0, 0], 
+    [255,120,0],
+    [255,255,0],
+    [255,255,255]
+];
+
+// Pick which segment we are in
+var n = stops.length - 1;
+var pos = t * n;
+var idx = Math.floor(pos);
+
+if(idx >= n) idx = n -1;
+
+var localT = pos - idx;
+var rgb = lerpColor(stops[idx], stops[idx + 1], localT);
+
+
+
+
+widget.setPropertyValue(
+    "background_color",
+    ColorFontUtil.getColorFromRGB(rgb[0], rgb[1], rgb[2])
+);
+
+
+
+]]></text>
+          <pv_name>$(PV)</pv_name>
+        </script>
+      </scripts>
+    </widget>
+    <widget type="polygon" version="2.0.0">
+      <name>Polygon_27</name>
+      <macros>
+        <PV>pva://dt5202_01:J3i[18]</PV>
+      </macros>
+      <x>264</x>
+      <y>304</y>
+      <width>30</width>
+      <height>31</height>
+      <points>
+        <point x="30.454407502580693" y="18.861945992985454">
+        </point>
+        <point x="18.365217234144723" y="0.0">
+        </point>
+        <point x="0.0" y="12.717343464926358">
+        </point>
+        <point x="11.912048649251858" y="31.422657988185307">
+        </point>
+        <point x="30.10489361908958" y="19.244316857195315">
+        </point>
+      </points>
+      <line_color>
+        <color name="Text" red="0" green="0" blue="0">
+        </color>
+      </line_color>
+      <background_color>
+        <color red="102" green="77" blue="179">
+        </color>
+      </background_color>
+      <scripts>
+        <script file="EmbeddedJs">
+          <text><![CDATA[/* Embedded javascript */
+importClass(org.csstudio.display.builder.runtime.script.PVUtil);
+importClass(org.csstudio.display.builder.runtime.script.ColorFontUtil);
+importClass(org.csstudio.display.builder.runtime.script.ScriptUtil);
+
+
+
+var value = PVUtil.getDouble(pvs[0]); 
+var minVal = 0.0;
+var maxVal = 5000.0;
+
+// Normalizing 0 to 1
+var t = (value - minVal) / (maxVal - minVal);
+if(t < 0.0) t = 0.0;
+if(t > 1.0) t = 1.0;
+
+function lerp(a,b,x){
+    return a + (b-a) * x;
+}
+
+function lerpColor(c1, c2, x){
+    return [
+        Math.round(lerp(c1[0], c2[0], x)),
+        Math.round(lerp(c1[1], c2[1], x)),
+        Math.round(lerp(c1[2], c2[2], x))
+    ];
+}
+
+
+// Heatmap Color Stops
+var stops = [
+    [0,  0, 0],
+    [80, 0, 0],
+    [200,0, 0], 
+    [255,120,0],
+    [255,255,0],
+    [255,255,255]
+];
+
+// Pick which segment we are in
+var n = stops.length - 1;
+var pos = t * n;
+var idx = Math.floor(pos);
+
+if(idx >= n) idx = n -1;
+
+var localT = pos - idx;
+var rgb = lerpColor(stops[idx], stops[idx + 1], localT);
+
+
+
+
+widget.setPropertyValue(
+    "background_color",
+    ColorFontUtil.getColorFromRGB(rgb[0], rgb[1], rgb[2])
+);
+
+
+
+]]></text>
+          <pv_name>$(PV)</pv_name>
+        </script>
+      </scripts>
+    </widget>
+    <widget type="polygon" version="2.0.0">
+      <name>Polygon_28</name>
+      <macros>
+        <PV>pva://dt5202_01:J3o[16]</PV>
+      </macros>
+      <x>277</x>
+      <y>324</y>
+      <width>30</width>
+      <height>31</height>
+      <points>
+        <point x="30.454407502580693" y="18.861945992985454">
+        </point>
+        <point x="18.365217234144723" y="0.0">
+        </point>
+        <point x="0.0" y="12.717343464926358">
+        </point>
+        <point x="11.912048649251858" y="31.422657988185307">
+        </point>
+        <point x="30.10489361908958" y="19.244316857195315">
+        </point>
+      </points>
+      <line_color>
+        <color name="Text" red="0" green="0" blue="0">
+        </color>
+      </line_color>
+      <background_color>
+        <color red="102" green="77" blue="179">
+        </color>
+      </background_color>
+      <scripts>
+        <script file="EmbeddedJs">
+          <text><![CDATA[/* Embedded javascript */
+importClass(org.csstudio.display.builder.runtime.script.PVUtil);
+importClass(org.csstudio.display.builder.runtime.script.ColorFontUtil);
+importClass(org.csstudio.display.builder.runtime.script.ScriptUtil);
+
+
+
+var value = PVUtil.getDouble(pvs[0]); 
+var minVal = 0.0;
+var maxVal = 5000.0;
+
+// Normalizing 0 to 1
+var t = (value - minVal) / (maxVal - minVal);
+if(t < 0.0) t = 0.0;
+if(t > 1.0) t = 1.0;
+
+function lerp(a,b,x){
+    return a + (b-a) * x;
+}
+
+function lerpColor(c1, c2, x){
+    return [
+        Math.round(lerp(c1[0], c2[0], x)),
+        Math.round(lerp(c1[1], c2[1], x)),
+        Math.round(lerp(c1[2], c2[2], x))
+    ];
+}
+
+
+// Heatmap Color Stops
+var stops = [
+    [0,  0, 0],
+    [80, 0, 0],
+    [200,0, 0], 
+    [255,120,0],
+    [255,255,0],
+    [255,255,255]
+];
+
+// Pick which segment we are in
+var n = stops.length - 1;
+var pos = t * n;
+var idx = Math.floor(pos);
+
+if(idx >= n) idx = n -1;
+
+var localT = pos - idx;
+var rgb = lerpColor(stops[idx], stops[idx + 1], localT);
+
+
+
+
+widget.setPropertyValue(
+    "background_color",
+    ColorFontUtil.getColorFromRGB(rgb[0], rgb[1], rgb[2])
+);
+
+
+
+]]></text>
+          <pv_name>$(PV)</pv_name>
+        </script>
+      </scripts>
+    </widget>
+    <widget type="polygon" version="2.0.0">
+      <name>Polygon_29</name>
+      <macros>
+        <PV>pva://dt5202_01:J3i[30]</PV>
+      </macros>
+      <x>78</x>
+      <y>254</y>
+      <width>30</width>
+      <height>31</height>
+      <points>
+        <point x="30.454407502580693" y="18.861945992985454">
+        </point>
+        <point x="18.365217234144723" y="0.0">
+        </point>
+        <point x="0.0" y="12.717343464926358">
+        </point>
+        <point x="11.912048649251858" y="31.422657988185307">
+        </point>
+        <point x="30.10489361908958" y="19.244316857195315">
+        </point>
+      </points>
+      <line_color>
+        <color name="Text" red="0" green="0" blue="0">
+        </color>
+      </line_color>
+      <background_color>
+        <color red="102" green="77" blue="179">
+        </color>
+      </background_color>
+      <scripts>
+        <script file="EmbeddedJs">
+          <text><![CDATA[/* Embedded javascript */
+importClass(org.csstudio.display.builder.runtime.script.PVUtil);
+importClass(org.csstudio.display.builder.runtime.script.ColorFontUtil);
+importClass(org.csstudio.display.builder.runtime.script.ScriptUtil);
+
+
+
+var value = PVUtil.getDouble(pvs[0]); 
+var minVal = 0.0;
+var maxVal = 5000.0;
+
+// Normalizing 0 to 1
+var t = (value - minVal) / (maxVal - minVal);
+if(t < 0.0) t = 0.0;
+if(t > 1.0) t = 1.0;
+
+function lerp(a,b,x){
+    return a + (b-a) * x;
+}
+
+function lerpColor(c1, c2, x){
+    return [
+        Math.round(lerp(c1[0], c2[0], x)),
+        Math.round(lerp(c1[1], c2[1], x)),
+        Math.round(lerp(c1[2], c2[2], x))
+    ];
+}
+
+
+// Heatmap Color Stops
+var stops = [
+    [0,  0, 0],
+    [80, 0, 0],
+    [200,0, 0], 
+    [255,120,0],
+    [255,255,0],
+    [255,255,255]
+];
+
+// Pick which segment we are in
+var n = stops.length - 1;
+var pos = t * n;
+var idx = Math.floor(pos);
+
+if(idx >= n) idx = n -1;
+
+var localT = pos - idx;
+var rgb = lerpColor(stops[idx], stops[idx + 1], localT);
+
+
+
+
+widget.setPropertyValue(
+    "background_color",
+    ColorFontUtil.getColorFromRGB(rgb[0], rgb[1], rgb[2])
+);
+
+
+
+]]></text>
+          <pv_name>$(PV)</pv_name>
+        </script>
+      </scripts>
+    </widget>
+    <widget type="polygon" version="2.0.0">
+      <name>Polygon_30</name>
+      <macros>
+        <PV>pva://dt5202_01:J3o[28]</PV>
+      </macros>
+      <x>59</x>
+      <y>267</y>
+      <width>30</width>
+      <height>31</height>
+      <points>
+        <point x="30.454407502580693" y="18.861945992985454">
+        </point>
+        <point x="18.365217234144723" y="0.0">
+        </point>
+        <point x="0.0" y="12.717343464926358">
+        </point>
+        <point x="11.912048649251858" y="31.422657988185307">
+        </point>
+        <point x="30.10489361908958" y="19.244316857195315">
+        </point>
+      </points>
+      <line_color>
+        <color name="Text" red="0" green="0" blue="0">
+        </color>
+      </line_color>
+      <background_color>
+        <color red="102" green="77" blue="179">
+        </color>
+      </background_color>
+      <scripts>
+        <script file="EmbeddedJs">
+          <text><![CDATA[/* Embedded javascript */
+importClass(org.csstudio.display.builder.runtime.script.PVUtil);
+importClass(org.csstudio.display.builder.runtime.script.ColorFontUtil);
+importClass(org.csstudio.display.builder.runtime.script.ScriptUtil);
+
+
+
+var value = PVUtil.getDouble(pvs[0]); 
+var minVal = 0.0;
+var maxVal = 5000.0;
+
+// Normalizing 0 to 1
+var t = (value - minVal) / (maxVal - minVal);
+if(t < 0.0) t = 0.0;
+if(t > 1.0) t = 1.0;
+
+function lerp(a,b,x){
+    return a + (b-a) * x;
+}
+
+function lerpColor(c1, c2, x){
+    return [
+        Math.round(lerp(c1[0], c2[0], x)),
+        Math.round(lerp(c1[1], c2[1], x)),
+        Math.round(lerp(c1[2], c2[2], x))
+    ];
+}
+
+
+// Heatmap Color Stops
+var stops = [
+    [0,  0, 0],
+    [80, 0, 0],
+    [200,0, 0], 
+    [255,120,0],
+    [255,255,0],
+    [255,255,255]
+];
+
+// Pick which segment we are in
+var n = stops.length - 1;
+var pos = t * n;
+var idx = Math.floor(pos);
+
+if(idx >= n) idx = n -1;
+
+var localT = pos - idx;
+var rgb = lerpColor(stops[idx], stops[idx + 1], localT);
+
+
+
+
+widget.setPropertyValue(
+    "background_color",
+    ColorFontUtil.getColorFromRGB(rgb[0], rgb[1], rgb[2])
+);
+
+
+
+]]></text>
+          <pv_name>$(PV)</pv_name>
+        </script>
+      </scripts>
+    </widget>
+    <widget type="polygon" version="2.0.0">
+      <name>Polygon_21</name>
+      <macros>
+        <PV>pva://dt5202_01:J3o[36]</PV>
+      </macros>
+      <x>56</x>
+      <y>108</y>
+      <width>30</width>
+      <height>31</height>
+      <points>
+        <point x="30.22163145003782" y="10.40966796875">
+        </point>
+        <point x="9.700765302104344" y="0.0">
+        </point>
+        <point x="0.0" y="21.204879760742188">
+        </point>
+        <point x="20.483033199919888" y="31.257916259765608">
+        </point>
+        <point x="30.14850975774951" y="10.709667968749983">
+        </point>
+      </points>
+      <line_color>
+        <color name="Text" red="0" green="0" blue="0">
+        </color>
+      </line_color>
+      <background_color>
+        <color red="102" green="77" blue="179">
+        </color>
+      </background_color>
+      <scripts>
+        <script file="EmbeddedJs">
+          <text><![CDATA[/* Embedded javascript */
+importClass(org.csstudio.display.builder.runtime.script.PVUtil);
+importClass(org.csstudio.display.builder.runtime.script.ColorFontUtil);
+importClass(org.csstudio.display.builder.runtime.script.ScriptUtil);
+
+
+
+var value = PVUtil.getDouble(pvs[0]); 
+var minVal = 0.0;
+var maxVal = 5000.0;
+
+// Normalizing 0 to 1
+var t = (value - minVal) / (maxVal - minVal);
+if(t < 0.0) t = 0.0;
+if(t > 1.0) t = 1.0;
+
+function lerp(a,b,x){
+    return a + (b-a) * x;
+}
+
+function lerpColor(c1, c2, x){
+    return [
+        Math.round(lerp(c1[0], c2[0], x)),
+        Math.round(lerp(c1[1], c2[1], x)),
+        Math.round(lerp(c1[2], c2[2], x))
+    ];
+}
+
+
+// Heatmap Color Stops
+var stops = [
+    [0,  0, 0],
+    [80, 0, 0],
+    [200,0, 0], 
+    [255,120,0],
+    [255,255,0],
+    [255,255,255]
+];
+
+// Pick which segment we are in
+var n = stops.length - 1;
+var pos = t * n;
+var idx = Math.floor(pos);
+
+if(idx >= n) idx = n -1;
+
+var localT = pos - idx;
+var rgb = lerpColor(stops[idx], stops[idx + 1], localT);
+
+
+
+
+widget.setPropertyValue(
+    "background_color",
+    ColorFontUtil.getColorFromRGB(rgb[0], rgb[1], rgb[2])
+);
+
+
+
+]]></text>
+          <pv_name>$(PV)</pv_name>
+        </script>
+      </scripts>
+    </widget>
+    <widget type="label" version="2.0.0">
+      <name>Label</name>
+      <text>Developed By: Julio Renta jrenta@bnl.gov</text>
+      <x>11</x>
+      <y>450</y>
+      <width>412</width>
+      <height>16</height>
+      <foreground_color>
+        <color name="Off" red="60" green="100" blue="60">
+        </color>
+      </foreground_color>
+      <horizontal_alignment>1</horizontal_alignment>
+      <vertical_alignment>1</vertical_alignment>
+    </widget>
+    <widget type="rectangle" version="2.0.0">
+      <name>Rectangle_1</name>
+      <macros>
+        <PV>loc://txt_ch12</PV>
+        <HeatMap>loc://heatmap</HeatMap>
+        <xxx>pva://dt5202_01:J3o[44]</xxx>
+      </macros>
+      <x>197</x>
+      <y>26</y>
+      <width>30</width>
+      <height>30</height>
+      <line_color>
+        <color name="Text" red="0" green="0" blue="0">
+        </color>
+      </line_color>
+      <background_color>
+        <color red="102" green="77" blue="179">
+        </color>
+      </background_color>
+      <scripts>
+        <script file="EmbeddedJs">
+          <text><![CDATA[/* Embedded javascript */
+importClass(org.csstudio.display.builder.runtime.script.PVUtil);
+importClass(org.csstudio.display.builder.runtime.script.ColorFontUtil);
+importClass(org.csstudio.display.builder.runtime.script.ScriptUtil);
+
+
+
+var value = PVUtil.getDouble(pvs[0]); 
+
+// Setting Default Values
+var minVal = 0.0;    
+var maxVal = 5000.0; 
+
+var heatmap = ScriptUtil.findWidgetByName(widget, "HeatMap");
+
+if(heatmap != null){
+    var heatmap_min = heatmap.getPropertyValue("minimum");
+    var heatmap_max = heatmap.getPropertyValue("maximum");
+
+    // Connecting old vars to the new vars
+    var minVal = parseFloat(heatmap_min);
+    var maxVal = parseFloat(heatmap_max);
+}
+
+
+// Normalizing 0 to 1
+var t = (value - minVal) / (maxVal - minVal);
+if(t < 0.0) t = 0.0;
+if(t > 1.0) t = 1.0;
+
+function lerp(a,b,x){
+    return a + (b-a) * x;
+}
+
+function lerpColor(c1, c2, x){
+    return [
+        Math.round(lerp(c1[0], c2[0], x)),
+        Math.round(lerp(c1[1], c2[1], x)),
+        Math.round(lerp(c1[2], c2[2], x))
+    ];
+}
+
+
+// Heatmap Color Stops
+var stops = [
+    [0,  0, 0],
+    [80, 0, 0],
+    [200,0, 0], 
+    [255,120,0],
+    [255,255,0],
+    [255,255,255]
+];
+
+// Pick which segment we are in
+var n = stops.length - 1;
+var pos = t * n;
+var idx = Math.floor(pos);
+
+if(idx >= n) idx = n -1;
+
+var localT = pos - idx;
+var rgb = lerpColor(stops[idx], stops[idx + 1], localT);
+
+
+
+
+widget.setPropertyValue(
+    "background_color",
+    ColorFontUtil.getColorFromRGB(rgb[0], rgb[1], rgb[2])
+);
+
+
+
+]]></text>
+          <pv_name>$(PV)</pv_name>
+          <pv_name>$(HeatMap)</pv_name>
+        </script>
+      </scripts>
+    </widget>
+    <widget type="rectangle" version="2.0.0">
+      <name>Rectangle_2</name>
+      <macros>
+        <PV>pva://dt5202_01:J3o[8]</PV>
+      </macros>
+      <x>358</x>
+      <y>187</y>
+      <width>30</width>
+      <height>30</height>
+      <line_color>
+        <color name="Text" red="0" green="0" blue="0">
+        </color>
+      </line_color>
+      <background_color>
+        <color red="102" green="77" blue="179">
+        </color>
+      </background_color>
+      <scripts>
+        <script file="EmbeddedJs">
+          <text><![CDATA[/* Embedded javascript */
+importClass(org.csstudio.display.builder.runtime.script.PVUtil);
+importClass(org.csstudio.display.builder.runtime.script.ColorFontUtil);
+importClass(org.csstudio.display.builder.runtime.script.ScriptUtil);
+
+
+
+var value = PVUtil.getDouble(pvs[0]); 
+var minVal = 0.0;
+var maxVal = 5000.0;
+
+// Normalizing 0 to 1
+var t = (value - minVal) / (maxVal - minVal);
+if(t < 0.0) t = 0.0;
+if(t > 1.0) t = 1.0;
+
+function lerp(a,b,x){
+    return a + (b-a) * x;
+}
+
+function lerpColor(c1, c2, x){
+    return [
+        Math.round(lerp(c1[0], c2[0], x)),
+        Math.round(lerp(c1[1], c2[1], x)),
+        Math.round(lerp(c1[2], c2[2], x))
+    ];
+}
+
+
+// Heatmap Color Stops
+var stops = [
+    [0,  0, 0],
+    [80, 0, 0],
+    [200,0, 0], 
+    [255,120,0],
+    [255,255,0],
+    [255,255,255]
+];
+
+// Pick which segment we are in
+var n = stops.length - 1;
+var pos = t * n;
+var idx = Math.floor(pos);
+
+if(idx >= n) idx = n -1;
+
+var localT = pos - idx;
+var rgb = lerpColor(stops[idx], stops[idx + 1], localT);
+
+
+
+
+widget.setPropertyValue(
+    "background_color",
+    ColorFontUtil.getColorFromRGB(rgb[0], rgb[1], rgb[2])
+);
+
+
+
+]]></text>
+          <pv_name>$(PV)</pv_name>
+        </script>
+      </scripts>
+    </widget>
+    <widget type="rectangle" version="2.0.0">
+      <name>Rectangle_3</name>
+      <macros>
+        <PV>pva://dt5202_01:J3o[20]</PV>
+      </macros>
+      <x>197</x>
+      <y>348</y>
+      <width>30</width>
+      <height>30</height>
+      <line_color>
+        <color name="Text" red="0" green="0" blue="0">
+        </color>
+      </line_color>
+      <background_color>
+        <color red="102" green="77" blue="179">
+        </color>
+      </background_color>
+      <scripts>
+        <script file="EmbeddedJs">
+          <text><![CDATA[/* Embedded javascript */
+importClass(org.csstudio.display.builder.runtime.script.PVUtil);
+importClass(org.csstudio.display.builder.runtime.script.ColorFontUtil);
+importClass(org.csstudio.display.builder.runtime.script.ScriptUtil);
+
+
+
+var value = PVUtil.getDouble(pvs[0]); 
+var minVal = 0.0;
+var maxVal = 5000.0;
+
+// Normalizing 0 to 1
+var t = (value - minVal) / (maxVal - minVal);
+if(t < 0.0) t = 0.0;
+if(t > 1.0) t = 1.0;
+
+function lerp(a,b,x){
+    return a + (b-a) * x;
+}
+
+function lerpColor(c1, c2, x){
+    return [
+        Math.round(lerp(c1[0], c2[0], x)),
+        Math.round(lerp(c1[1], c2[1], x)),
+        Math.round(lerp(c1[2], c2[2], x))
+    ];
+}
+
+
+// Heatmap Color Stops
+var stops = [
+    [0,  0, 0],
+    [80, 0, 0],
+    [200,0, 0], 
+    [255,120,0],
+    [255,255,0],
+    [255,255,255]
+];
+
+// Pick which segment we are in
+var n = stops.length - 1;
+var pos = t * n;
+var idx = Math.floor(pos);
+
+if(idx >= n) idx = n -1;
+
+var localT = pos - idx;
+var rgb = lerpColor(stops[idx], stops[idx + 1], localT);
+
+
+
+
+widget.setPropertyValue(
+    "background_color",
+    ColorFontUtil.getColorFromRGB(rgb[0], rgb[1], rgb[2])
+);
+
+
+
+]]></text>
+          <pv_name>$(PV)</pv_name>
+        </script>
+      </scripts>
+    </widget>
+    <widget type="rectangle" version="2.0.0">
+      <name>Rectangle_4</name>
+      <macros>
+        <PV>pva://dt5202_01:J3o[32]</PV>
+      </macros>
+      <x>38</x>
+      <y>187</y>
+      <width>30</width>
+      <height>30</height>
+      <line_color>
+        <color name="Text" red="0" green="0" blue="0">
+        </color>
+      </line_color>
+      <background_color>
+        <color red="102" green="77" blue="179">
+        </color>
+      </background_color>
+      <scripts>
+        <script file="EmbeddedJs">
+          <text><![CDATA[/* Embedded javascript */
+importClass(org.csstudio.display.builder.runtime.script.PVUtil);
+importClass(org.csstudio.display.builder.runtime.script.ColorFontUtil);
+importClass(org.csstudio.display.builder.runtime.script.ScriptUtil);
+
+
+
+var value = PVUtil.getDouble(pvs[0]); 
+var minVal = 0.0;
+var maxVal = 5000.0;
+
+// Normalizing 0 to 1
+var t = (value - minVal) / (maxVal - minVal);
+if(t < 0.0) t = 0.0;
+if(t > 1.0) t = 1.0;
+
+function lerp(a,b,x){
+    return a + (b-a) * x;
+}
+
+function lerpColor(c1, c2, x){
+    return [
+        Math.round(lerp(c1[0], c2[0], x)),
+        Math.round(lerp(c1[1], c2[1], x)),
+        Math.round(lerp(c1[2], c2[2], x))
+    ];
+}
+
+
+// Heatmap Color Stops
+var stops = [
+    [0,  0, 0],
+    [80, 0, 0],
+    [200,0, 0], 
+    [255,120,0],
+    [255,255,0],
+    [255,255,255]
+];
+
+// Pick which segment we are in
+var n = stops.length - 1;
+var pos = t * n;
+var idx = Math.floor(pos);
+
+if(idx >= n) idx = n -1;
+
+var localT = pos - idx;
+var rgb = lerpColor(stops[idx], stops[idx + 1], localT);
+
+
+
+
+widget.setPropertyValue(
+    "background_color",
+    ColorFontUtil.getColorFromRGB(rgb[0], rgb[1], rgb[2])
+);
+
+
+
+]]></text>
+          <pv_name>$(PV)</pv_name>
+        </script>
+      </scripts>
+    </widget>
+    <widget type="rectangle" version="2.0.0">
+      <name>Rectangle_5</name>
+      <macros>
+        <PV>pva://dt5202_01:J3i[46]</PV>
+      </macros>
+      <x>197</x>
+      <y>54</y>
+      <width>30</width>
+      <height>30</height>
+      <line_color>
+        <color name="Text" red="0" green="0" blue="0">
+        </color>
+      </line_color>
+      <background_color>
+        <color red="102" green="77" blue="179">
+        </color>
+      </background_color>
+      <scripts>
+        <script file="EmbeddedJs">
+          <text><![CDATA[/* Embedded javascript */
+importClass(org.csstudio.display.builder.runtime.script.PVUtil);
+importClass(org.csstudio.display.builder.runtime.script.ColorFontUtil);
+importClass(org.csstudio.display.builder.runtime.script.ScriptUtil);
+
+
+
+var value = PVUtil.getDouble(pvs[0]); 
+var minVal = 0.0;
+var maxVal = 5000.0;
+
+// Normalizing 0 to 1
+var t = (value - minVal) / (maxVal - minVal);
+if(t < 0.0) t = 0.0;
+if(t > 1.0) t = 1.0;
+
+function lerp(a,b,x){
+    return a + (b-a) * x;
+}
+
+function lerpColor(c1, c2, x){
+    return [
+        Math.round(lerp(c1[0], c2[0], x)),
+        Math.round(lerp(c1[1], c2[1], x)),
+        Math.round(lerp(c1[2], c2[2], x))
+    ];
+}
+
+
+// Heatmap Color Stops
+var stops = [
+    [0,  0, 0],
+    [80, 0, 0],
+    [200,0, 0], 
+    [255,120,0],
+    [255,255,0],
+    [255,255,255]
+];
+
+// Pick which segment we are in
+var n = stops.length - 1;
+var pos = t * n;
+var idx = Math.floor(pos);
+
+if(idx >= n) idx = n -1;
+
+var localT = pos - idx;
+var rgb = lerpColor(stops[idx], stops[idx + 1], localT);
+
+
+
+
+widget.setPropertyValue(
+    "background_color",
+    ColorFontUtil.getColorFromRGB(rgb[0], rgb[1], rgb[2])
+);
+
+
+
+]]></text>
+          <pv_name>$(PV)</pv_name>
+        </script>
+      </scripts>
+    </widget>
+    <widget type="rectangle" version="2.0.0">
+      <name>Rectangle_6</name>
+      <macros>
+        <PV>pva://dt5202_01:J3o[34]</PV>
+      </macros>
+      <x>65</x>
+      <y>187</y>
+      <width>30</width>
+      <height>30</height>
+      <line_color>
+        <color name="Text" red="0" green="0" blue="0">
+        </color>
+      </line_color>
+      <background_color>
+        <color red="102" green="77" blue="179">
+        </color>
+      </background_color>
+      <scripts>
+        <script file="EmbeddedJs">
+          <text><![CDATA[/* Embedded javascript */
+importClass(org.csstudio.display.builder.runtime.script.PVUtil);
+importClass(org.csstudio.display.builder.runtime.script.ColorFontUtil);
+importClass(org.csstudio.display.builder.runtime.script.ScriptUtil);
+
+
+
+var value = PVUtil.getDouble(pvs[0]); 
+var minVal = 0.0;
+var maxVal = 5000.0;
+
+// Normalizing 0 to 1
+var t = (value - minVal) / (maxVal - minVal);
+if(t < 0.0) t = 0.0;
+if(t > 1.0) t = 1.0;
+
+function lerp(a,b,x){
+    return a + (b-a) * x;
+}
+
+function lerpColor(c1, c2, x){
+    return [
+        Math.round(lerp(c1[0], c2[0], x)),
+        Math.round(lerp(c1[1], c2[1], x)),
+        Math.round(lerp(c1[2], c2[2], x))
+    ];
+}
+
+
+// Heatmap Color Stops
+var stops = [
+    [0,  0, 0],
+    [80, 0, 0],
+    [200,0, 0], 
+    [255,120,0],
+    [255,255,0],
+    [255,255,255]
+];
+
+// Pick which segment we are in
+var n = stops.length - 1;
+var pos = t * n;
+var idx = Math.floor(pos);
+
+if(idx >= n) idx = n -1;
+
+var localT = pos - idx;
+var rgb = lerpColor(stops[idx], stops[idx + 1], localT);
+
+
+
+
+widget.setPropertyValue(
+    "background_color",
+    ColorFontUtil.getColorFromRGB(rgb[0], rgb[1], rgb[2])
+);
+
+
+
+]]></text>
+          <pv_name>$(PV)</pv_name>
+        </script>
+      </scripts>
+    </widget>
+    <widget type="rectangle" version="2.0.0">
+      <name>Rectangle_7</name>
+      <macros>
+        <PV>pva://dt5202_01:J3o[22]</PV>
+      </macros>
+      <x>197</x>
+      <y>321</y>
+      <width>30</width>
+      <height>30</height>
+      <line_color>
+        <color name="Text" red="0" green="0" blue="0">
+        </color>
+      </line_color>
+      <background_color>
+        <color red="102" green="77" blue="179">
+        </color>
+      </background_color>
+      <scripts>
+        <script file="EmbeddedJs">
+          <text><![CDATA[/* Embedded javascript */
+importClass(org.csstudio.display.builder.runtime.script.PVUtil);
+importClass(org.csstudio.display.builder.runtime.script.ColorFontUtil);
+importClass(org.csstudio.display.builder.runtime.script.ScriptUtil);
+
+
+
+var value = PVUtil.getDouble(pvs[0]); 
+var minVal = 0.0;
+var maxVal = 5000.0;
+
+// Normalizing 0 to 1
+var t = (value - minVal) / (maxVal - minVal);
+if(t < 0.0) t = 0.0;
+if(t > 1.0) t = 1.0;
+
+function lerp(a,b,x){
+    return a + (b-a) * x;
+}
+
+function lerpColor(c1, c2, x){
+    return [
+        Math.round(lerp(c1[0], c2[0], x)),
+        Math.round(lerp(c1[1], c2[1], x)),
+        Math.round(lerp(c1[2], c2[2], x))
+    ];
+}
+
+
+// Heatmap Color Stops
+var stops = [
+    [0,  0, 0],
+    [80, 0, 0],
+    [200,0, 0], 
+    [255,120,0],
+    [255,255,0],
+    [255,255,255]
+];
+
+// Pick which segment we are in
+var n = stops.length - 1;
+var pos = t * n;
+var idx = Math.floor(pos);
+
+if(idx >= n) idx = n -1;
+
+var localT = pos - idx;
+var rgb = lerpColor(stops[idx], stops[idx + 1], localT);
+
+
+
+
+widget.setPropertyValue(
+    "background_color",
+    ColorFontUtil.getColorFromRGB(rgb[0], rgb[1], rgb[2])
+);
+
+
+
+]]></text>
+          <pv_name>$(PV)</pv_name>
+        </script>
+      </scripts>
+    </widget>
+    <widget type="rectangle" version="2.0.0">
+      <name>Rectangle_8</name>
+      <macros>
+        <PV>pva://dt5202_01:J3o[10]</PV>
+      </macros>
+      <x>331</x>
+      <y>187</y>
+      <width>30</width>
+      <height>30</height>
+      <line_color>
+        <color name="Text" red="0" green="0" blue="0">
+        </color>
+      </line_color>
+      <background_color>
+        <color red="102" green="77" blue="179">
+        </color>
+      </background_color>
+      <scripts>
+        <script file="EmbeddedJs">
+          <text><![CDATA[/* Embedded javascript */
+importClass(org.csstudio.display.builder.runtime.script.PVUtil);
+importClass(org.csstudio.display.builder.runtime.script.ColorFontUtil);
+importClass(org.csstudio.display.builder.runtime.script.ScriptUtil);
+
+
+
+var value = PVUtil.getDouble(pvs[0]); 
+var minVal = 0.0;
+var maxVal = 5000.0;
+
+// Normalizing 0 to 1
+var t = (value - minVal) / (maxVal - minVal);
+if(t < 0.0) t = 0.0;
+if(t > 1.0) t = 1.0;
+
+function lerp(a,b,x){
+    return a + (b-a) * x;
+}
+
+function lerpColor(c1, c2, x){
+    return [
+        Math.round(lerp(c1[0], c2[0], x)),
+        Math.round(lerp(c1[1], c2[1], x)),
+        Math.round(lerp(c1[2], c2[2], x))
+    ];
+}
+
+
+// Heatmap Color Stops
+var stops = [
+    [0,  0, 0],
+    [80, 0, 0],
+    [200,0, 0], 
+    [255,120,0],
+    [255,255,0],
+    [255,255,255]
+];
+
+// Pick which segment we are in
+var n = stops.length - 1;
+var pos = t * n;
+var idx = Math.floor(pos);
+
+if(idx >= n) idx = n -1;
+
+var localT = pos - idx;
+var rgb = lerpColor(stops[idx], stops[idx + 1], localT);
+
+
+
+
+widget.setPropertyValue(
+    "background_color",
+    ColorFontUtil.getColorFromRGB(rgb[0], rgb[1], rgb[2])
+);
+
+
+
+]]></text>
+          <pv_name>$(PV)</pv_name>
+        </script>
+      </scripts>
+    </widget>
+  </widget>
+  <widget type="image" version="2.0.0">
+    <name>Image_1</name>
+    <pv_name>loc://heatmap</pv_name>
+    <x>425</x>
+    <width>110</width>
+    <height>597</height>
+    <background_color>
+      <color name="Transparent" red="255" green="255" blue="255" alpha="0">
+      </color>
+    </background_color>
+    <color_map>
+      <name>HOT</name>
+    </color_map>
+    <color_bar>
+      <visible>true</visible>
+      <bar_size>100</bar_size>
+      <scale_font>
+        <font name="Default" family="Liberation Sans" style="REGULAR" size="14.0">
+        </font>
+      </scale_font>
+    </color_bar>
+    <x_axis>
+      <visible>false</visible>
+      <title></title>
+      <minimum>0.0</minimum>
+      <maximum>100.0</maximum>
+      <title_font>
+        <font name="Default Bold" family="Liberation Sans" style="BOLD" size="14.0">
+        </font>
+      </title_font>
+      <scale_font>
+        <font name="Default" family="Liberation Sans" style="REGULAR" size="14.0">
+        </font>
+      </scale_font>
+    </x_axis>
+    <y_axis>
+      <visible>false</visible>
+      <title></title>
+      <minimum>0.0</minimum>
+      <maximum>100.0</maximum>
+      <title_font>
+        <font name="Default Bold" family="Liberation Sans" style="BOLD" size="14.0">
+        </font>
+      </title_font>
+      <scale_font>
+        <font name="Default" family="Liberation Sans" style="REGULAR" size="14.0">
+        </font>
+      </scale_font>
+    </y_axis>
+    <rules>
+      <rule name="MinimumRule" prop_id="minimum" out_exp="true">
+        <exp bool_exp="pv0==0">
+          <expression>0</expression>
+        </exp>
+        <exp bool_exp="pv0==1">
+          <expression>pv1</expression>
+        </exp>
+        <pv_name>loc://btnAutoMan</pv_name>
+        <pv_name>loc://txt_min</pv_name>
+      </rule>
+      <rule name="MaximumRule" prop_id="maximum" out_exp="true">
+        <exp bool_exp="pv0==0">
+          <expression>5000</expression>
+        </exp>
+        <exp bool_exp="pv0==1">
+          <expression>pv1</expression>
+        </exp>
+        <pv_name>loc://btnAutoMan</pv_name>
+        <pv_name>loc://txt_max</pv_name>
+      </rule>
+    </rules>
+    <border_alarm_sensitive>false</border_alarm_sensitive>
+    <interpolation>1</interpolation>
+    <color_mode>18</color_mode>
+    <minimum>100.0</minimum>
+    <maximum>200.0</maximum>
+  </widget>
+  <widget type="choice" version="2.0.0">
+    <name>Choice Button</name>
+    <pv_name>loc://btnAutoMan</pv_name>
+    <x>600</x>
+    <y>210</y>
+    <width>170</width>
+    <height>16</height>
+    <border_alarm_sensitive>false</border_alarm_sensitive>
+    <items>
+      <item>AUTO</item>
+      <item>MANUAL</item>
+    </items>
+  </widget>
+  <widget type="textentry" version="3.0.0">
+    <name>Text Entry</name>
+    <pv_name>loc://txt_min(0)</pv_name>
+    <x>670</x>
+    <y>250</y>
+    <show_units>false</show_units>
+  </widget>
+  <widget type="textentry" version="3.0.0">
+    <name>Text Entry_1</name>
+    <pv_name>loc://txt_max(100)</pv_name>
+    <x>670</x>
+    <y>230</y>
+    <show_units>false</show_units>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_15</name>
+    <text>Maximum</text>
+    <x>600</x>
+    <y>230</y>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_16</name>
+    <text>Minimum</text>
+    <x>600</x>
+    <y>250</y>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_mode</name>
+    <text>MODE:</text>
+    <x>600</x>
+    <y>270</y>
+    <width>170</width>
+    <horizontal_alignment>1</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+    <wrap_words>false</wrap_words>
+    <rules>
+      <rule name="New Rule" prop_id="text" out_exp="false">
+        <exp bool_exp="pv0 == 0">
+          <value>MODE: AUTO</value>
+        </exp>
+        <exp bool_exp="pv0 == 1">
+          <value>MODE: MANUAL</value>
+        </exp>
+        <pv_name>loc://btnAutoMan</pv_name>
+      </rule>
+    </rules>
+  </widget>
+  <widget type="textentry" version="3.0.0">
+    <name>Text Entry_2</name>
+    <pv_name>loc://txt_ch12</pv_name>
+    <x>660</x>
+    <y>63</y>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_19</name>
+    <text>CH12</text>
+    <x>620</x>
+    <y>63</y>
+    <width>36</width>
+    <height>16</height>
+    <auto_size>true</auto_size>
+  </widget>
+</display>
