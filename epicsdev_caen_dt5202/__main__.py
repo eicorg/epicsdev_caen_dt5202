@@ -7,10 +7,16 @@ This server:
 - calls a user hook for custom processing,
 - updates PVs,
 - moves processed files to an output directory.
+
+The user hook is implemented as a plugin module, which can be specified with the --plugin argument.
+The plugin module must implement the following functions:
+- init(parent): Initialize the plugin with a reference to the main data class.
+- get_pvdefs(): Return PV definitions for the plugin.
+- publish(): Publish PVs based on the current data.
 """
 # pylint: disable=invalid-name
 from __future__ import annotations
-__version__ = 'v1.0.2 2026-07-31'# scaling factor for each plane
+__version__ = 'v1.0.3 2026-08-03'# beamloss: Reference rings published for J3 and J4
 
 import argparse
 import logging

@@ -1,23 +1,25 @@
-"""Plugin for the CAEN DT5202 digitizer to read beam loss sensors around the beam pipe.
+"""Plugin for the CAEN DT5202 digitizer to read beam loss sensors for Tandem SEU apparatus.
 """
 # pylint: disable=invalid-name
+from functools import partial
 from dataclasses import dataclass
 import numpy as np
 from epicsdev import epicsdev
 
 # Map of the board channels to the physical sensors numbers.
 _sensorMap = {
-    'J3i': [46,2,6,10,14,18,22,26,30,34,38,42],
-    'J3o': [44,0,4,8,12,16,20,24,28,32,36,40],
-    'J4i': [1,45,41,37,33,29,25,21,17,13,9,5],
-    'J4o': [3,47,43,39,35,31,27,23,19,15,11,7],
-    'J5': [48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63],
+    'J3i': [46,2,6,10,14,18,22,26,30,34,38,42],# inner ring of J3 plane
+    'J3o': [44,0,4,8,12,16,20,24,28,32,36,40],# outer ring of J3 plane
+    'J4i': [1,45,41,37,33,29,25,21,17,13,9,5],# inner ring of J4 plane
+    'J4o': [3,47,43,39,35,31,27,23,19,15,11,7],# outer ring of J4 plane
+    'J5': [48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63],# J5 plane 4x4 sensor array
 }
 _planeMap = {'J3i':'J3', 'J3o':'J3', 'J4i':'J4', 'J4o':'J4', 'J5':'J5'}
 
 @dataclass(slots=True)
 class C_:
     parent = None# reference to the main program class
+    shuffled = {key:[0,4095] for key in _sensorMap}# shuffled and scaled sensor values
 
 # helper functions for the plugin
 def polarPoligon(arr, max_value=None):
@@ -74,18 +76,39 @@ def get_pvdefs():
                         0, {F:'W', LH:4095}])
         pvdefs.append([f"{plane}_hitMapHigh", f"High threshold for hit map of {plane} sensors",
                        4095, {F:'W', LH:4095}])
-        pvdefs.append([f"{plane}_hitMapAuto", f"Auto threshold for hit map of {plane} sensors",
-                      ['MANUAL','AUTO'], {F:'WD'}])
+        pvdefs.append([f"{plane}_hitMapAuto", f"Auto threshold for hit map of {plane} sensors.",
+                      ['MANUAL','AUTO','FULL'], {F:'WD', SET:partial(set_hitMapAuto, plane)}])
 
-        # coordinates of 64-point ring
-        ring_angles = np.linspace(0.0, 2.0 * np.pi, num=64, endpoint=True)
-        ringX = np.cos(ring_angles)
-        ringY = np.sin(ring_angles)
-        pvdefs.append([f"{plane}_x ","X coordinates of a reference ring", ringX.tolist()])
-        pvdefs.append([f"{plane}_y","Y coordinates of a reference ring", ringY.tolist()])
+        pvdefs.append([f"{plane}_x","X coordinates of a reference ring", [0.]])
+        pvdefs.append([f"{plane}_y","Y coordinates of a reference ring", [0.]])
 
     pvdefs.append(['gainSelector','Gain selector for sensor arrays', ['LowGain','HighGain'], {F:'WD'}])
     return pvdefs
+
+def planeIntensityRange(plane, ):
+    """Return the maximum intensity value for the specified plane based on the current sensor values."""
+    if plane == 'J5':
+        return (min(C_.shuffled['J5']), max(C_.shuffled['J5']))
+    else:
+        return (min(min(C_.shuffled[f"{plane}i"]), min(C_.shuffled[f"{plane}o"])),
+                max(max(C_.shuffled[f"{plane}i"]), max(C_.shuffled[f"{plane}o"])))
+
+def update_hitMapThresholds(plane, choice=None):
+    """Update the hit map thresholds for the specified plane based on the current sensor values."""
+    if choice is None:
+        choice = str(epicsdev.pvv(f"{plane}_hitMapAuto"))
+    if choice == 'AUTO':
+        planeMin, planeMax = planeIntensityRange(plane)
+        epicsdev.publish(f"{plane}_hitMapHigh", planeMax)
+        epicsdev.publish(f"{plane}_hitMapLow", planeMin)
+
+def set_hitMapAuto(plane, choice, *_):
+    #print(f"Setting hit map thresholds for {plane} based on {choice} choice.")
+    if choice == 'AUTO':
+        update_hitMapThresholds(plane, choice)
+    elif choice == 'FULL':
+        epicsdev.publish(f"{plane}_hitMapLow", 0)
+        epicsdev.publish(f"{plane}_hitMapHigh", 4095)
 
 def publish():
     """Publish the current values of the beam loss sensors to their respective PVs."""
@@ -95,31 +118,32 @@ def publish():
     channels = epicsdev.pvv(selected)
 
     # Shuffle the scaled channels according to the sensor map
-    shuffled = {}
+    C_.shuffled = {}
     for sensorArray,smap in _sensorMap.items():
         scale = epicsdev.pvv(f"{_planeMap[sensorArray]}_scale")
-        shuffled[sensorArray] = [channels[i] * scale for i in smap]
+        C_.shuffled[sensorArray] = [channels[i] * scale for i in smap]
 
-    maxPlaneIntensityMap = {
-        'J3': max(max(shuffled['J3i']), max(shuffled['J3o'])),
-        'J4': max(max(shuffled['J4i']), max(shuffled['J4o'])),
-        'J5': max(shuffled['J5']),
-    }
-    #TODO: publish planes max ring
+    # Publish the reference ring coordinates for J3 and J4 planes
+    for plane in ('J3','J4'):
+        planeMax = planeIntensityRange(plane)[1]
+        arr = [planeMax] * 60
+        x,y = polarPoligon(arr, max_value=planeMax)
+        epicsdev.publish(f"{plane}_x", x)
+        epicsdev.publish(f"{plane}_y", y)
+        update_hitMapThresholds(plane)
 
-    #samePlane = None
+    # Publish the shuffled sensor values and their polar coordinates for each ring
     for ring in _sensorMap:
         plane = _planeMap[ring]
         scale = epicsdev.pvv(f"{plane}_scale")
-        #print(f"Publishing PVs for {ring} with plane {plane}, scale {scale}")
-        epicsdev.publish(ring, shuffled[ring])
+        epicsdev.publish(ring, C_.shuffled[ring])
         if plane == 'J5':
             continue
 
-        # publish the polar coordinates and normalization value for the ring
-        maxPlaneIntensity = maxPlaneIntensityMap[plane]
-        x, y = polarPoligon(shuffled[ring], max_value=maxPlaneIntensity)
+        # Calculate the maximum intensity for the plane and generate polar coordinates for the ring
+        planeMax = planeIntensityRange(plane)[1]
+        x, y = polarPoligon(C_.shuffled[ring], max_value=planeMax)
         epicsdev.publish(f"{ring}_x", x)
         epicsdev.publish(f"{ring}_y", y)
-        v = np.ceil(maxPlaneIntensity/2)*2# round up to the nearest even number
+        v = np.ceil(planeMax/2)*2# round up to the nearest even number
         epicsdev.publish(f"{ring}_max", v)
